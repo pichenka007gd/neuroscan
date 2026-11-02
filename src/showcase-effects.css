@@ -1,0 +1,70 @@
+.showcase { --ring-radius: clamp(380px, 43vw, 600px); --ring-card: clamp(70px, 8vw, 112px); --ring-duration: 90s; }
+.showcase .showcase-stage { position: relative; width: min(calc(100% + 80px), var(--showcase-viewport-width, 100%)); margin-left: calc((100% - min(calc(100% + 80px), var(--showcase-viewport-width, 100%))) / 2); height: clamp(380px, 38vw, 540px); overflow: hidden; perspective: 1300px; perspective-origin: 50% 44%; isolation: isolate; }
+.showcase-tilt, .showcase-ring { position: absolute; inset: 0; transform-style: preserve-3d; }
+.showcase-tilt { transform: translateY(-60px) rotateX(-14deg); }
+.showcase-ring { animation: ring-orbit var(--ring-duration) linear infinite; animation-play-state: paused; }
+.showcase[data-motion="running"] .showcase-ring { animation-play-state: running; }
+.ring-slot { position: absolute; width: var(--ring-card); height: calc(var(--ring-card) * 1.26); top: 50%; left: 50%; transform-style: preserve-3d; transform: translate(-50%, -50%) rotateY(var(--angle)) translateZ(var(--ring-radius)); }
+.ring-front, .ring-back { position: absolute; inset: 0; margin: 0; border: 1px solid #bcd4c452; border-radius: 7px; background: #101b17; overflow: hidden; backface-visibility: hidden; }
+.ring-front { transform: translateZ(1px); }
+.ring-back { transform: rotateY(180deg) translateZ(1px); border-color: #728e7d45; }
+.ring-front > img, .ring-back > img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.ring-back > img { opacity: .65; }
+.ring-front figcaption { position: absolute; bottom: 0; left: 0; right: 0; padding: 7px; background: #0b1513e8; color: #dce8df; font-size: 12px; }
+.ring-glass { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 10px; padding: 10px; color: #f0fff7; opacity: 0; background: linear-gradient(135deg, #c9ffe327, #173b306b 48%, #edfff52b); backdrop-filter: blur(7px) saturate(1.2); border: 1px solid #edfff578; border-radius: 6px; box-shadow: inset 0 1px 0 #fff8; transition: opacity .3s; pointer-events: none; }
+.ring-glass > span { font-size: 10px; line-height: 1.4; }
+.ring-glass strong { font-size: 24px; font-weight: 500; }
+.ring-glass small { font-size: 10px; color: #c4dace; }
+.ring-front:hover .ring-glass { opacity: 1; }
+.showcase .showcase-footer { margin-top: 0; }
+.ring-hint { color: #a8beb0; font-size: 11px; white-space: nowrap; }
+.ring-hint[hidden] { display: none; }
+.showcase-stage:focus-visible { outline: 1px solid #c0e6cf70; outline-offset: -2px; border-radius: 12px; }
+.attention-frame {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  overflow: hidden;
+  border-radius: 7px;
+  pointer-events: none;
+  color: #daeee1;
+}
+.attention-frame > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.attention-border { stroke: currentColor; stroke-opacity: .28; stroke-width: .7; }
+.attention-runner {
+  stroke: #eefbf2;
+  stroke-width: 1.5;
+  stroke-dasharray: 13 87;
+  stroke-linecap: round;
+  animation: attention-edge 3.8s linear infinite;
+  animation-play-state: paused;
+}
+.attention-rays {
+  position: absolute;
+  inset: -22%;
+  background: repeating-conic-gradient(from 0deg, transparent 0deg 14deg, #edfff01c 15deg, transparent 17deg 30deg);
+  animation: attention-rays 24s ease-in-out infinite alternate;
+  animation-play-state: paused;
+}
+.story-analysis .attention-frame { width: 56px; height: 56px; bottom: 39px; left: calc(50% + 4px); }
+.showcase .attention-frame { top: 30%; left: 53%; }
+.process-card[data-visible="true"]:not([data-page-hidden="true"]):is(:hover, :focus-within) .attention-rays,
+.process-card[data-visible="true"]:not([data-page-hidden="true"]):is(:hover, :focus-within) .attention-runner,
+.showcase[data-motion="running"] .ring-face:hover .attention-rays,
+.showcase[data-motion="running"] .ring-face:hover .attention-runner { animation-play-state: running; }
+
+
+@keyframes ring-orbit { to { transform: rotateY(360deg); } }
+@keyframes attention-edge { to { stroke-dashoffset: -100; } }
+@keyframes attention-rays { to { transform: rotate(36deg); } }
+@media (max-width: 620px) { .showcase { --ring-radius: 380px; --ring-card: 70px; } .showcase .showcase-stage { height: 350px; perspective: 1050px; } .showcase .showcase-footer { gap: 13px; } }
+@media (prefers-reduced-motion: reduce) {
+.showcase .showcase-stage { height: auto; width: 100%; margin: 20px 0 30px; overflow: visible; perspective: none; }
+.showcase .showcase-tilt, .showcase .showcase-ring { position: static; transform: none; animation: none; }
+.showcase .showcase-ring { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 12px; }
+.showcase .ring-slot { position: relative; width: auto; height: auto; aspect-ratio: 1 / 1.26; transform: none; }
+.showcase .ring-front { transform: none; }
+.showcase .ring-back, .showcase .ring-hint { display: none; }
+.attention-rays, .attention-runner { animation: none; }
+}
+@media (prefers-reduced-motion: reduce) and (max-width: 620px) { .showcase .showcase-ring { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; } }

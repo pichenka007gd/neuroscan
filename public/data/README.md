@@ -10,4 +10,4 @@ The source asset's individual license and original acquisition provenance have n
 
 Anatomy, imaging modality, and original acquisition details are not independently verified. The displayed cross-section appears abdominal; the viewer deliberately uses neutral tomography labels rather than claiming brain MRI or a specific acquisition sequence.
 
-This prototype uses educational sample data. The highlighted region, model score (94.8%), and all AI-analysis annotations are synthetic interface demonstrations, not model inference, a diagnosis, or a probability of cancer. No patient upload, backend, or inference service is involved.
+This prototype uses educational sample data. The highlighted region, displayed deviation (18.6%), and all AI-analysis annotations are synthetic interface demonstrations, not model inference, a diagnosis, or a probability of cancer. No patient upload, backend, or inference service is involved.

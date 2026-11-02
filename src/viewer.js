@@ -4,6 +4,8 @@ import './viewer.css';
 
 const ROI = new THREE.Vector3(0.43, 0.25, 0.12);
 const LIMIT = 55000;
+const ANALYSIS = 'Обнаружено локальное изменение интенсивности. Требуется оценка специалиста.';
+const ROTATION_HINT = 'Потяните для поворота · Пробел останавливает движение';
 
 export function sampleVolume(volume, limit = LIMIT) {
   const [nx, ny, nz] = volume.dimensions;
@@ -78,9 +80,10 @@ export async function mountViewer(container) {
     <div class="scan-status" role="status"><span class="scan-spinner"></span>Загружаем объём томографии<span>Реальные данные · 6,8 МБ</span></div>
     <div class="scan-wipe" aria-hidden="true"><span>‹ ›</span></div>
     <div class="scan-side-labels" aria-hidden="true"><span>ИСХОДНЫЕ ДАННЫЕ</span><span>С АНАЛИЗОМ ИИ</span></div>
-    <div class="scan-annotation" hidden><div class="scan-roi-box"></div><div class="scan-roi-label"><strong>Зона внимания</strong><span>Демо-оценка · 94,8%</span><small>Условная область · не диагноз</small></div></div>
+    <div class="scan-annotation" hidden><button type="button" class="scan-roi-box" aria-label="Область внимания: показать симуляцию анализа" aria-expanded="false"><span>Область внимания</span></button></div>
+    <div class="scan-analysis" hidden><span class="scan-analysis-eyebrow">СИНТЕТИЧЕСКАЯ ДЕМОНСТРАЦИЯ</span><strong>Отклонение от нормы · 18,6%</strong><p><span class="scan-analysis-accessible">${ANALYSIS}</span><span class="scan-analysis-text" aria-hidden="true"></span></p><small>Симуляция интерфейса. Не клиническая оценка.</small></div>
     <div class="scan-coordinates" aria-hidden="true"><span>S</span><span>L</span><span>R</span><span>I</span></div>
-    <div class="scan-bottom"><div class="scan-toolbar"><div class="scan-mode" role="group" aria-label="Режим просмотра"><button type="button" data-mode="3d" aria-pressed="true">3D</button><button type="button" data-mode="slice" aria-pressed="false">Срез</button></div><span class="scan-hint">Поворот: потяните или нажмите стрелки</span><div class="scan-actions"><button type="button" class="scan-pause" aria-label="Приостановить вращение" aria-pressed="false">Ⅱ</button><button type="button" class="scan-reset" aria-label="Сбросить ракурс и сравнение">↺</button></div></div><label class="scan-range-label"><span>Без анализа</span><input class="scan-range" type="range" min="0" max="100" value="47" aria-label="Граница сравнения: исходные данные слева, симуляция анализа справа"><span>С анализом</span></label><div class="scan-disclaimer">Демонстрационные данные. Не для клинического применения.</div></div>
+    <div class="scan-bottom"><div class="scan-toolbar"><div class="scan-mode" role="group" aria-label="Режим просмотра"><button type="button" data-mode="3d" aria-pressed="true">3D</button><button type="button" data-mode="slice" aria-pressed="false">Срез</button></div><span class="scan-hint">Поворот: потяните или нажмите стрелки</span></div><label class="scan-range-label"><span>Без анализа</span><input class="scan-range" type="range" min="0" max="100" value="47" aria-label="Граница сравнения: исходные данные слева, симуляция анализа справа"><span>С анализом</span></label><div class="scan-disclaimer">Демонстрационные данные. Не для клинического применения.</div></div>
   `;
   const stage = container.querySelector('.scan-stage');
   const status = container.querySelector('.scan-status');
@@ -88,15 +91,21 @@ export async function mountViewer(container) {
   const wipe = container.querySelector('.scan-wipe');
   const annotation = container.querySelector('.scan-annotation');
   const box = container.querySelector('.scan-roi-box');
-  const pause = container.querySelector('.scan-pause');
+  const analysis = container.querySelector('.scan-analysis');
+  const analysisText = container.querySelector('.scan-analysis-text');
   const hint = container.querySelector('.scan-hint');
+  hint.textContent = ROTATION_HINT;
+  hint.id = `${container.id || 'scan-viewer'}-motion-hint`;
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const listeners = new AbortController();
   let renderer;
   let frame = 0;
   let visible = true;
   let disposed = false;
-  let paused = motion.matches;
+  let analysisOpen = false;
+  let motionPaused = false;
+  let revealTimer = 0;
+  let leaveTimer = 0;
   let mode = '3d';
   let lastTime = 0;
   let drag = null;
@@ -112,6 +121,11 @@ export async function mountViewer(container) {
   let resizeObserver;
   const cleanup = () => {
     disposed = true;
+    clearTimeout(revealTimer);
+    clearTimeout(leaveTimer);
+    analysis.hidden = true;
+    box.setAttribute('aria-expanded', 'false');
+    container.dataset.analysisState = 'closed';
     cancelAnimationFrame(frame);
     listeners.abort();
     observer?.disconnect();
@@ -126,7 +140,9 @@ export async function mountViewer(container) {
     renderer.setClearColor(0x0c151c, 0);
     renderer.domElement.setAttribute('role', 'img');
     renderer.domElement.tabIndex = 0;
-    renderer.domElement.setAttribute('aria-label', 'Облако точек томографического исследования. Стрелки поворачивают объём и приостанавливают вращение. Мятная область — синтетическая демонстрация, не диагноз.');
+    renderer.domElement.setAttribute('aria-label', 'Облако точек томографического исследования. Стрелки поворачивают объём, Пробел приостанавливает или возобновляет движение. Мятная область — синтетическая демонстрация, не диагноз.');
+    renderer.domElement.setAttribute('aria-describedby', hint.id);
+    renderer.domElement.setAttribute('aria-keyshortcuts', 'Space ArrowLeft ArrowRight ArrowUp ArrowDown');
     stage.append(renderer.domElement);
     const volume = await new NRRDLoader().loadAsync(`${import.meta.env.BASE_URL}data/I.nrrd`);
     if (disposed) return cleanup;
@@ -179,9 +195,14 @@ export async function mountViewer(container) {
       container.dataset.cameraY = camera.position.y.toFixed(4);
     };
     const cameraSettling = () => Math.abs(camera.position.x - cameraTarget.x) > 0.0005 || Math.abs(camera.position.y - cameraTarget.y) > 0.0005;
+    const rotating = () => !motion.matches && !motionPaused && !drag && !analysisOpen && mode === '3d';
     const draw = () => {
       if (disposed) return;
       renderer.render(scene, camera);
+      container.dataset.rotationY = group.rotation.y.toFixed(4);
+      container.dataset.rotationX = group.rotation.x.toFixed(4);
+      container.dataset.rotating = String(rotating());
+      container.dataset.motionPaused = String(motionPaused);
       const width = stageWidth;
       const height = stageHeight;
       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -201,16 +222,17 @@ export async function mountViewer(container) {
       box.style.width = `${maxX - minX}px`;
       box.style.height = `${maxY - minY}px`;
       annotation.hidden = uniforms.split.value >= 1 || maxX <= width * uniforms.split.value;
-      annotation.style.clipPath = `inset(-200px -400px -200px ${Math.max(0, width * uniforms.split.value - minX)}px)`;
+      annotation.style.clipPath = `inset(-24px -140px -24px ${Math.max(0, width * uniforms.split.value - minX)}px)`;
+      if (annotation.hidden && analysisOpen) closeAnalysis();
     };
     const tick = time => {
       frame = 0;
       if (!visible || document.hidden || disposed) return;
-      if (!paused && mode === '3d') group.rotation.y += Math.min((time - (lastTime || time)) / 1000, 0.05) * 0.11;
+      if (rotating()) group.rotation.y += Math.min((time - (lastTime || time)) / 1000, 0.05) * 0.11;
       lastTime = time;
       moveCamera();
       draw();
-      if ((!paused && mode === '3d') || cameraSettling()) frame = requestAnimationFrame(tick);
+      if (rotating() || cameraSettling()) frame = requestAnimationFrame(tick);
     };
     const synchronize = () => {
       cancelAnimationFrame(frame);
@@ -218,12 +240,34 @@ export async function mountViewer(container) {
       lastTime = 0;
       if (!visible || document.hidden || disposed) return;
       draw();
-      if ((!paused && mode === '3d') || cameraSettling()) frame = requestAnimationFrame(tick);
+      if (rotating() || cameraSettling()) frame = requestAnimationFrame(tick);
     };
-    const updatePause = () => {
-      pause.setAttribute('aria-pressed', String(paused));
-      pause.setAttribute('aria-label', paused ? 'Включить вращение' : 'Приостановить вращение');
-      pause.textContent = paused ? '▷' : 'Ⅱ';
+    const closeAnalysis = () => {
+      clearTimeout(revealTimer);
+      clearTimeout(leaveTimer);
+      analysisOpen = false;
+      analysis.hidden = true;
+      box.setAttribute('aria-expanded', 'false');
+      container.dataset.analysisState = 'closed';
+    };
+    const openAnalysis = () => {
+      clearTimeout(leaveTimer);
+      if (analysisOpen || annotation.hidden || drag) return;
+      analysisOpen = true;
+      analysis.hidden = false;
+      box.setAttribute('aria-expanded', 'true');
+      cameraTarget.set(camera.position.x, camera.position.y);
+      let count = motion.matches ? ANALYSIS.length : 0;
+      const reveal = () => {
+        analysisText.textContent = ANALYSIS.slice(0, count);
+        container.dataset.analysisState = count === ANALYSIS.length ? 'complete' : 'generating';
+        if (count < ANALYSIS.length) {
+          count = Math.min(ANALYSIS.length, count + 3);
+          revealTimer = setTimeout(reveal, 28);
+        }
+      };
+      reveal();
+      synchronize();
     };
     const resetSplit = () => {
       uniforms.split.value = Number(range.value) / 100;
@@ -238,7 +282,8 @@ export async function mountViewer(container) {
       range.value = String(Math.round(THREE.MathUtils.clamp((event.clientX - bounds.left) / bounds.width, 0, 1) * 100));
       resetSplit();
     };
-    on(wipe, 'pointerdown', event => {
+    on(wipe.querySelector('span'), 'pointerdown', event => {
+      if (event.button !== 0) return;
       event.preventDefault();
       wiping = true;
       wipe.setPointerCapture(event.pointerId);
@@ -247,72 +292,112 @@ export async function mountViewer(container) {
     on(wipe, 'pointermove', event => { if (wiping) moveWipe(event); });
     on(wipe, 'pointerup', () => { wiping = false; });
     on(wipe, 'pointercancel', () => { wiping = false; });
+    on(wipe, 'lostpointercapture', () => { wiping = false; });
     on(range, 'input', resetSplit);
-    on(pause, 'click', () => { paused = !paused; updatePause(); synchronize(); });
-    on(container.querySelector('.scan-reset'), 'click', () => {
-      group.rotation.set(0.24, -0.55, 0);
-      cameraTarget.set(0, 0);
-      range.value = '47';
-      resetSplit();
+    const scheduleClose = () => {
+      clearTimeout(leaveTimer);
+      leaveTimer = setTimeout(() => {
+        if (document.activeElement === box || box.matches(':hover') || analysis.matches(':hover')) return;
+        closeAnalysis();
+        synchronize();
+      }, 160);
+    };
+    on(box, 'pointerenter', event => { if (event.pointerType !== 'touch') openAnalysis(); });
+    on(box, 'pointerleave', scheduleClose);
+    on(box, 'focus', openAnalysis);
+    on(box, 'blur', scheduleClose);
+    on(box, 'click', openAnalysis);
+    on(analysis, 'pointerenter', () => clearTimeout(leaveTimer));
+    on(analysis, 'pointerleave', scheduleClose);
+    on(container, 'keydown', event => {
+      if (event.key === 'Escape' && analysisOpen) { closeAnalysis(); synchronize(); }
+    });
+    on(container, 'pointerdown', event => {
+      if (analysisOpen && !annotation.contains(event.target) && !analysis.contains(event.target)) closeAnalysis();
     });
     container.querySelectorAll('[data-mode]').forEach(button => on(button, 'click', () => {
       mode = button.dataset.mode;
+      closeAnalysis();
       container.dataset.mode = mode;
       cloud.visible = mode === '3d';
       slice.visible = mode === 'slice';
-      pause.disabled = mode === 'slice';
-      hint.textContent = mode === 'slice' ? `Аксиальный срез · ${sliceZ + 1} / ${nz}` : 'Поворот: потяните или нажмите стрелки';
+      cameraTarget.set(0, 0);
+      hint.textContent = mode === 'slice' ? `Аксиальный срез · ${sliceZ + 1} / ${nz}` : motionPaused ? 'Движение остановлено · Пробел продолжает' : ROTATION_HINT;
       container.querySelectorAll('[data-mode]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
       synchronize();
     }));
     on(renderer.domElement, 'pointerdown', event => {
-      if (mode !== '3d') return;
-      drag = { x: event.clientX, y: event.clientY };
+      if (mode !== '3d' || event.button !== 0 || drag) return;
+      closeAnalysis();
+      drag = { x: event.clientX, y: event.clientY, id: event.pointerId };
       cameraTarget.set(0, 0);
       renderer.domElement.setPointerCapture(event.pointerId);
-      paused = true; updatePause(); synchronize();
+      renderer.domElement.focus({ preventScroll: true });
+      synchronize();
     });
     on(renderer.domElement, 'pointermove', event => {
       if (!drag) {
-        if (event.pointerType !== 'mouse' || motion.matches || mode !== '3d') return;
+        if (event.pointerType !== 'mouse' || motion.matches || motionPaused || mode !== '3d' || analysisOpen) return;
         const bounds = stage.getBoundingClientRect();
         cameraTarget.set(((event.clientX - bounds.left) / bounds.width * 2 - 1) * 0.16, -((event.clientY - bounds.top) / bounds.height * 2 - 1) * 0.10);
         if (!frame) synchronize();
         return;
       }
+      if (event.pointerId !== drag.id) return;
       group.rotation.y += (event.clientX - drag.x) * 0.007;
       group.rotation.x = THREE.MathUtils.clamp(group.rotation.x + (event.clientY - drag.y) * 0.005, -0.7, 0.7);
-      drag = { x: event.clientX, y: event.clientY };
+      drag.x = event.clientX;
+      drag.y = event.clientY;
       synchronize();
     });
-    on(renderer.domElement, 'pointerup', () => { drag = null; });
-    on(renderer.domElement, 'pointercancel', () => { drag = null; });
+    const endDrag = event => {
+      if (!drag || event.pointerId !== drag.id) return;
+      drag = null;
+      if (renderer.domElement.hasPointerCapture(event.pointerId)) renderer.domElement.releasePointerCapture(event.pointerId);
+      synchronize();
+    };
+    on(renderer.domElement, 'pointerup', endDrag);
+    on(renderer.domElement, 'pointercancel', endDrag);
+    on(renderer.domElement, 'lostpointercapture', endDrag);
     on(renderer.domElement, 'pointerleave', () => {
-      cameraTarget.set(0, 0);
+      if (!analysisOpen && !motionPaused) cameraTarget.set(0, 0);
       if (!frame) synchronize();
     });
     on(renderer.domElement, 'keydown', event => {
+      if (mode === '3d' && event.key === ' ') {
+        event.preventDefault();
+        if (event.repeat) return;
+        motionPaused = !motionPaused;
+        cameraTarget.set(camera.position.x, camera.position.y);
+        hint.textContent = motionPaused ? 'Движение остановлено · Пробел продолжает' : ROTATION_HINT;
+        synchronize();
+        return;
+      }
       if (mode !== '3d' || !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
       event.preventDefault();
-      paused = true;
+      closeAnalysis();
+      cameraTarget.set(0, 0);
       if (event.key === 'ArrowLeft') group.rotation.y -= 0.08;
       if (event.key === 'ArrowRight') group.rotation.y += 0.08;
       if (event.key === 'ArrowUp') group.rotation.x = Math.max(-0.7, group.rotation.x - 0.08);
       if (event.key === 'ArrowDown') group.rotation.x = Math.min(0.7, group.rotation.x + 0.08);
-      updatePause();
       synchronize();
     });
-    on(document, 'visibilitychange', synchronize);
+    on(document, 'visibilitychange', () => {
+      if (document.hidden) { closeAnalysis(); drag = null; }
+      synchronize();
+    });
     on(motion, 'change', event => {
       if (event.matches) {
-        paused = true;
+        clearTimeout(revealTimer);
+        clearTimeout(leaveTimer);
+        if (analysisOpen) { analysisText.textContent = ANALYSIS; container.dataset.analysisState = 'complete'; }
         cameraTarget.set(0, 0);
         camera.position.x = 0;
         camera.position.y = 0;
         moveCamera();
-        updatePause();
-        synchronize();
       }
+      synchronize();
     });
     on(renderer.domElement, 'webglcontextlost', event => {
       event.preventDefault();
@@ -338,14 +423,19 @@ export async function mountViewer(container) {
       synchronize();
     });
     resizeObserver.observe(stage);
-    observer = new IntersectionObserver(entries => { visible = entries[0].isIntersecting; synchronize(); });
+    observer = new IntersectionObserver(entries => {
+      visible = entries[0].isIntersecting;
+      if (!visible) { closeAnalysis(); drag = null; }
+      synchronize();
+    });
     observer.observe(container);
     container.dataset.state = 'loaded';
     container.dataset.points = String(sampled.count);
     renderer.domElement.dataset.loaded = 'true';
     renderer.domElement.dataset.points = String(sampled.count);
     status.hidden = true;
-    updatePause();
+    moveCamera();
+    closeAnalysis();
     resetSplit();
   } catch (error) {
     cleanup();
