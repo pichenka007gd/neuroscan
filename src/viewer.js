@@ -5,7 +5,7 @@ import './viewer.css';
 const ROI = new THREE.Vector3(0.43, 0.25, 0.12);
 const LIMIT = 55000;
 const ANALYSIS = 'Обнаружено локальное изменение интенсивности. Требуется оценка специалиста.';
-const ROTATION_HINT = 'Потяните для поворота · Пробел останавливает движение';
+const ROTATION_HINT = 'Потяните для поворота · Пробел: пауза';
 
 export function sampleVolume(volume, limit = LIMIT) {
   const [nx, ny, nz] = volume.dimensions;
@@ -76,14 +76,14 @@ export async function mountViewer(container) {
   container.dataset.state = 'loading';
   container.innerHTML = `
     <div class="scan-stage" aria-label="Интерактивная реконструкция томографии"></div>
-    <div class="scan-heading"><span class="scan-live-dot"></span><div><strong>Томографическое исследование</strong><span>3D-реконструкция</span></div><span class="scan-series">Демонстрационный объём<br>256 × 256 × 113</span></div>
-    <div class="scan-status" role="status"><span class="scan-spinner"></span>Загружаем объём томографии<span>Реальные данные · 6,8 МБ</span></div>
+    <div class="scan-heading"><span class="scan-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 3H4a1 1 0 0 0-1 1v4m13-5h4a1 1 0 0 1 1 1v4M3 16v4a1 1 0 0 0 1 1h4m8 0h4a1 1 0 0 0 1-1v-4M7 12h10"/><circle cx="12" cy="12" r="3"/></svg></span><div><strong>Исследование</strong><span>NeuroScan Vision</span></div><span class="scan-series">3D</span></div>
+    <div class="scan-status" role="status"><span class="scan-spinner"></span>Загрузка исследования…</div>
     <div class="scan-wipe" aria-hidden="true"><span>‹ ›</span></div>
     <div class="scan-side-labels" aria-hidden="true"><span>ИСХОДНЫЕ ДАННЫЕ</span><span>С АНАЛИЗОМ ИИ</span></div>
     <div class="scan-annotation" hidden><button type="button" class="scan-roi-box" aria-label="Область внимания: показать симуляцию анализа" aria-expanded="false"><span>Область внимания</span></button></div>
-    <div class="scan-analysis" hidden><span class="scan-analysis-eyebrow">СИНТЕТИЧЕСКАЯ ДЕМОНСТРАЦИЯ</span><strong>Отклонение от нормы · 18,6%</strong><p><span class="scan-analysis-accessible">${ANALYSIS}</span><span class="scan-analysis-text" aria-hidden="true"></span></p><small>Симуляция интерфейса. Не клиническая оценка.</small></div>
+    <div class="scan-analysis" hidden><div class="analysis-heading"><span class="analysis-document" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg></span><span class="scan-analysis-eyebrow">Черновик ИИ</span><span class="analysis-demo">Демо</span></div><div class="analysis-signal" aria-hidden="true"><span class="analysis-preview"><img src="${import.meta.env.BASE_URL}showcase/slice-66.png" alt="" width="64" height="64"><svg viewBox="0 0 64 64" fill="none"><path d="M32 24h-8v8m24 0v-8h-8m-16 16v8h8m8 0h8v-8" stroke="currentColor" stroke-width="1.5"/></svg></span><span>Область внимания<span class="analysis-progress"></span></span></div><strong>Отклонение от нормы · 18,6%</strong><p><span class="scan-analysis-accessible">${ANALYSIS}</span><span class="scan-analysis-text" aria-hidden="true"></span></p><small><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m7 12 3 3 7-7"/><circle cx="12" cy="12" r="9"/></svg>Требует проверки врачом</small></div>
     <div class="scan-coordinates" aria-hidden="true"><span>S</span><span>L</span><span>R</span><span>I</span></div>
-    <div class="scan-bottom"><div class="scan-toolbar"><div class="scan-mode" role="group" aria-label="Режим просмотра"><button type="button" data-mode="3d" aria-pressed="true">3D</button><button type="button" data-mode="slice" aria-pressed="false">Срез</button></div><span class="scan-hint">Поворот: потяните или нажмите стрелки</span></div><label class="scan-range-label"><span>Без анализа</span><input class="scan-range" type="range" min="0" max="100" value="47" aria-label="Граница сравнения: исходные данные слева, симуляция анализа справа"><span>С анализом</span></label><div class="scan-disclaimer">Демонстрационные данные. Не для клинического применения.</div></div>
+    <div class="scan-bottom"><div class="scan-toolbar"><div class="scan-mode" role="group" aria-label="Режим просмотра"><button type="button" data-mode="3d" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 8 5v8l-8 5-8-5V8Zm0 9 8-4m-8 4L4 8m8 4v9"/></svg>3D</button><button type="button" data-mode="slice" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5"/></svg>Срез</button></div><span class="scan-hint">Потяните для поворота</span></div><label class="scan-range-label"><span>Без анализа</span><input class="scan-range" type="range" min="0" max="100" value="47" aria-label="Граница сравнения: исходные данные слева, симуляция анализа справа"><span>С анализом</span></label></div>
   `;
   const stage = container.querySelector('.scan-stage');
   const status = container.querySelector('.scan-status');
@@ -431,10 +431,11 @@ export async function mountViewer(container) {
     resizeObserver.observe(stage);
     observer = new IntersectionObserver(entries => {
       visible = entries[0].isIntersecting;
+      container.dataset.sceneVisible = String(visible);
       if (!visible) { closeAnalysis(); drag = null; }
       synchronize();
     });
-    observer.observe(container);
+    observer.observe(stage);
     container.dataset.state = 'loaded';
     container.dataset.points = String(sampled.count);
     renderer.domElement.dataset.loaded = 'true';

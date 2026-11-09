@@ -13,14 +13,14 @@ export function impactMarkup(arrow) {
   return `<section id="clinics" class="impact-section" aria-labelledby="impact-title">
     <div class="wrap">
       <div class="impact-heading">
-        <div><p class="eyebrow">Для клиник / время в масштабе дня</p><h2 id="impact-title">Верните время<br><span>врачу.</span></h2><p class="impact-intro">Сравните время на описание одной и той же серии.<br>Меньше минут на рутину — больше времени у врача.</p></div>
-        <div class="impact-stat"><span class="impact-model-label">РАСЧЁТ ЭКОНОМИИ ВРЕМЕНИ</span><p class="impact-number"><span data-impact-count aria-hidden="true">${monthlyHours}</span><span class="sr-only">${monthlyHours} часов</span><span aria-hidden="true">часов</span></p><p>меньше на описание исследований за месяц</p><span class="impact-daily">4 часа в день × 22 рабочих дня = 88 часов</span><p class="impact-stat-explanation">Если описывать 60 исследований в день: по 6 минут с NeuroScan вместо 10 минут без него. Это расчёт по условиям кейса, не обещание результата.</p></div>
+        <div><p class="eyebrow">Для клиник</p><h2 id="impact-title">Верните время<br><span>врачу.</span></h2></div>
+        <div class="impact-stat"><span class="impact-model-label">ПРИМЕР ЭКОНОМИИ</span><p class="impact-number"><span data-impact-count aria-hidden="true">${monthlyHours}</span><span class="sr-only">${monthlyHours} часов</span><span aria-hidden="true">часов</span></p><p>на описание исследований за месяц</p><span class="impact-daily">4 часа в день × 22 рабочих дня = 88 часов</span></div>
       </div>
       <figure class="impact-figure" aria-labelledby="impact-chart-caption">
         <figcaption id="impact-chart-caption"><span>Накопленное время на описание</span><span>Один рабочий день</span></figcaption>
         <div class="impact-comparison"><div class="impact-plot">
           <svg class="impact-chart" viewBox="0 0 1000 350" preserveAspectRatio="none" role="img" aria-labelledby="impact-chart-title impact-chart-desc">
-            <title id="impact-chart-title">Модель рутинной нагрузки за день</title><desc id="impact-chart-desc">60 исследований: без ассистента 600 минут, с ассистентом 360 минут. Разница 240 минут в день, или 88 часов за 22 рабочих дня. Допущения: 10 минут на описание и снижение времени на 40 процентов. Это модель учебного кейса, не клинический результат и не прогноз.</desc>
+            <title id="impact-chart-title">Время на описание исследований</title><desc id="impact-chart-desc">Пример расчёта. 60 исследований: без ассистента 600 минут, с ассистентом 360 минут. Разница 240 минут в день, или 88 часов за 22 рабочих дня.</desc>
             <g class="impact-grid"><path d="M80 30H800 M80 170H800 M80 310H800"/></g>
             <path class="impact-gap" d="M80 310L800 30L800 142Z"/>
             <g class="impact-series impact-series-manual"><path class="impact-line impact-line-manual" pathLength="1" d="M80 310L800 30"/><circle class="impact-trace impact-trace-manual" data-impact-dot="manual" cx="800" cy="30" r="4"/></g>
@@ -32,7 +32,7 @@ export function impactMarkup(arrow) {
         </div>
         <div class="impact-scenarios" role="group" aria-label="Выделить линию на графике"><button class="impact-scenario" data-scenario="manual" aria-pressed="false"><span class="scenario-key">Без NeuroScan</span><strong>600 <span>мин</span></strong><span>10 минут на исследование</span><small>Всё описание — вручную</small></button><button class="impact-scenario" data-scenario="assisted" aria-pressed="false"><span class="scenario-key">С NeuroScan</span><strong>360 <span>мин</span></strong><span>6 минут на исследование</span><small>Врач проверяет подсказки ИИ</small></button></div></div><p class="impact-axis-caption">Исследований за день</p>
       </figure>
-      <div class="impact-footer"><div><p class="impact-assumptions">Одна серия: 60 исследований. Экономия: 4 минуты на каждом, 240 минут за день. В месяце — 22 рабочих дня.</p><p class="impact-disclaimer">Модель, не прогноз и не клинический результат. Фактический эффект проверяется на пилоте.</p></div><a class="text-link" href="#demo">Обсудить пилот ${arrow}</a></div>
+      <div class="impact-footer"><p class="impact-assumptions">60 исследований в день · 10 → 6 минут на описание</p><a class="text-link" href="#demo">Обсудить пилот ${arrow}</a></div>
     </div>
   </section>`;
 }

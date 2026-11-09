@@ -18,7 +18,7 @@ test('impact chart has accessible static totals, linear cumulative paths and a s
   assert.match(markup, /role="img" aria-labelledby="impact-chart-title impact-chart-desc"/);
   assert.match(markup, /60 исследований: без ассистента 600 минут, с ассистентом 360 минут/);
   assert.match(markup, /240 минут в день, или 88 часов за 22 рабочих дня/);
-  assert.match(markup, /не клинический результат и не прогноз/);
+  assert.match(markup, /Пример расчёта/);
   assert.match(markup, /pathLength="1" d="M80 310L800 30"/);
   assert.match(markup, /pathLength="1" d="M80 310L800 142"/);
   for (const tick of [0, 15, 30, 45, 60]) assert.ok(markup.includes(`<span>${tick}</span>`));

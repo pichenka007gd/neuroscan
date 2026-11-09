@@ -103,16 +103,18 @@ test('viewer pointer, annotation and motion regressions', { skip: !url }, async 
       assert.notEqual(await hotspot.evaluate(element => getComputedStyle(element).backgroundImage), 'none');
       const style = await hotspot.evaluate(element => ({
         border: getComputedStyle(element).borderTopWidth,
-        outline: getComputedStyle(element).outlineWidth,
+        outline: getComputedStyle(element).outlineStyle,
         shadow: getComputedStyle(element).boxShadow,
       }));
-      assert.equal(style.border, '1px');
-      assert.equal(style.outline, '2px');
-      assert.notEqual(style.shadow, 'none');
+      assert.equal(style.border, '0px');
+      assert.equal(style.outline, 'none');
+      assert.equal(style.shadow, 'none');
       await page.waitForFunction(() => document.querySelector('#scan-viewer').dataset.analysisState === 'complete');
       assert.match(await viewer.locator('.scan-analysis-text').innerText(), /Требуется оценка специалиста/);
       assert.match(await viewer.locator('.scan-analysis').innerText(), /Отклонение от нормы · 18,6%/);
-      assert.match(await viewer.locator('.scan-analysis').innerText(), /Не клиническая оценка/);
+      assert.match(await viewer.locator('.scan-analysis').innerText(), /Черновик ИИ/);
+      assert.match(await viewer.locator('.scan-analysis').innerText(), /Демо/);
+      assert.equal(await viewer.locator('.analysis-heading svg').count(), 1);
       await viewer.screenshot({ path: '.verification/new-roi.png' });
       assert.equal(await viewer.locator('.scan-analysis [aria-live]').count(), 0);
       const held = await angle();

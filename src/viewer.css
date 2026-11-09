@@ -11,6 +11,7 @@
   border: 1px solid #ffffff12;
   border-radius: 18px;
   font-family: inherit;
+  user-select: none;
 }
 
 .scan-stage {
@@ -35,11 +36,14 @@
   left: 24px;
   right: 24px;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 10px;
   pointer-events: none;
   z-index: 3;
 }
+
+.scan-mark { display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid #b3ddc936; border-radius: 10px; color: #bcebd4; background: #b1e9ce0c; }
+.scan-mark svg { width: 23px; height: 23px; }
 
 .scan-heading strong {
   display: block;
@@ -129,7 +133,7 @@
   position: relative;
   display: block;
   padding: 0;
-  border: 1px solid #c1ffe4;
+  border: 0;
   border-radius: 0;
   pointer-events: auto;
   min-width: 25px;
@@ -142,15 +146,16 @@
     linear-gradient(#e0fff1, #e0fff1) left bottom/16px 3px no-repeat,
     linear-gradient(#e0fff1, #e0fff1) left bottom/3px 16px no-repeat,
     linear-gradient(#e0fff1, #e0fff1) right bottom/16px 3px no-repeat,
-    linear-gradient(#e0fff1, #e0fff1) right bottom/3px 16px no-repeat,
-    #42ba8c24;
-  outline: 2px solid #06150ee6;
-  box-shadow: 0 0 14px #9fffdc45, inset 0 0 0 2px #07180f80;
+    linear-gradient(#e0fff1, #e0fff1) right bottom/3px 16px no-repeat;
+  outline: none;
+  box-shadow: none;
 }
 
 .scan-viewer .scan-roi-box:hover:not(:disabled) {
-  background-color: #79e8b536;
+  background-color: #79e8b510;
 }
+
+.scan-viewer .scan-roi-box:focus-visible { background-color: #a7e8cd25; }
 
 .scan-roi-box > span {
   position: absolute;
@@ -171,21 +176,33 @@
   position: absolute;
   z-index: 4;
   right: 18px;
-  bottom: 158px;
-  width: min(256px, calc(100% - 36px));
-  padding: 15px;
-  background: #10221de0;
+  bottom: 118px;
+  width: min(280px, calc(100% - 36px));
+  padding: 17px;
+  background: #10221df5;
   backdrop-filter: blur(12px);
   border: 1px solid #81c9ac40;
   border-radius: 10px;
 }
 
+.analysis-heading { display: flex; align-items: center; gap: 10px; }
+.analysis-document { display: grid; place-items: center; width: 32px; height: 36px; color: #cbecdc; background: #b6dbcf0c; border-radius: 6px; }
+.analysis-document svg { width: 22px; height: 25px; }
+.analysis-demo { margin-left: auto; border: 1px solid #a5d6be40; border-radius: 20px; padding: 3px 7px; font-size: 10px; color: #acc6b8; }
+.analysis-signal { display: grid; grid-template-columns: 64px 1fr; align-items: center; gap: 12px; margin: 14px 0 12px; padding: 8px; border-radius: 7px; background: #b6dbcf08; color: #acd8bf; }
+.analysis-preview { position: relative; width: 64px; height: 64px; }
+.analysis-preview img { display: block; width: 64px; height: 64px; object-fit: cover; border-radius: 4px; }
+.analysis-preview svg { position: absolute; inset: 0; width: 64px; height: 64px; }
+.analysis-signal > span { font-size: 11px; color: #b8cebf; }
+.analysis-progress { display: block; height: 3px; width: 100%; background: #a4d7bb; margin-top: 10px; transform-origin: left; }
+[data-analysis-state=generating] .analysis-progress { animation: analysis-progress .7s ease both; }
+@keyframes analysis-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
 .scan-analysis-eyebrow {
   display: block;
-  margin-bottom: 9px;
-  color: #98b9ac;
-  font-size: 12px;
-  letter-spacing: .3px;
+  color: #d5eee1;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .scan-analysis strong {
@@ -196,7 +213,7 @@
 }
 
 .scan-analysis p {
-  height: 54px;
+  height: 60px;
   margin: 9px 0;
   font-size: 12px;
   line-height: 1.5;
@@ -204,11 +221,17 @@
 }
 
 .scan-analysis small {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding-top: 12px;
+  border-top: 1px solid #afd7bf20;
   color: #abc4b9;
   font-size: 12px;
   line-height: 1.4;
 }
+.scan-analysis small svg { width: 17px; height: 17px; flex-shrink: 0; }
+.scan-viewer:is([data-analysis-state=generating], [data-analysis-state=complete]) :is(.scan-hint, .scan-roi-box > span) { visibility: hidden; }
 
 .scan-analysis-accessible {
   position: absolute;
@@ -284,6 +307,7 @@
   border-radius: 4px;
   font-size: 13px;
 }
+.scan-mode button svg { width: 16px; height: 16px; margin-right: 5px; vertical-align: -3px; }
 
 .scan-mode button[aria-pressed=true] {
   color: #e0eceb;
@@ -380,13 +404,13 @@
   .scan-heading { top: 18px; left: 16px; right: 16px; }
   .scan-heading strong { font-size: 13px; }
   .scan-heading div > span { font-size: 11px; }
-  .scan-series { position: absolute; top: 24px; right: 0; font-size: 10px; line-height: 1.4; }
+  .scan-series { padding: 5px 8px; border: 1px solid #c8ddcf26; border-radius: 5px; font-size: 11px; }
   .scan-side-labels { top: 85px; left: 16px; right: 16px; font-size: 10px; letter-spacing: .2px; }
   .scan-stage { inset: 72px 0 158px; }
   .scan-annotation { transform: translateY(72px); }
   .scan-bottom { left: 16px; right: 16px; bottom: 14px; }
-  .scan-hint { position: absolute; bottom: 132px; left: 0; right: 0; text-align: center; font-size: 11px; }
-  .scan-analysis { right: 12px; bottom: 168px; width: 232px; padding: 12px; }
+  .scan-hint { position: absolute; bottom: 104px; left: 0; right: 0; text-align: center; font-size: 11px; }
+  .scan-analysis { right: 12px; bottom: 104px; width: 244px; padding: 12px; }
   .scan-range-label { gap: 8px; }
   .scan-wipe { top: 104px; bottom: 158px; }
   .scan-coordinates { inset: 106px 10px 158px; }

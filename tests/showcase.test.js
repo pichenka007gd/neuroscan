@@ -134,9 +134,9 @@ test('ring pauses offscreen, in hidden tabs, for reduced motion, and by user cho
   assert.equal(section.dataset.motion, 'running');
 });
 
-test('each story links to the real viewer and decorative scenes are hidden from assistive technology', () => {
+test('stories support focus and keep decorative scenes hidden from assistive technology', () => {
   const html = processCards();
-  assert.equal((html.match(/href="#scan-viewer"/g) || []).length, 3);
+  assert.equal((html.match(/tabindex="0"/g) || []).length, 3);
   assert.equal((html.match(/class="story-art [^"]+" aria-hidden="true"/g) || []).length, 3);
   assert.match(html, /Примите решение/);
 });
@@ -151,7 +151,7 @@ test('carousel references 32 unique real local PNGs with reserved dimensions', a
     assert.equal(buffer.subarray(1, 4).toString(), 'PNG');
   }
   assert.equal((html.match(/width="256" height="256" loading="lazy"/g) || []).length, 64);
-  assert.match(html, /Демонстрационный объём · не диагностическое заключение/);
+  assert.match(html, /aria-label="Вращающееся кольцо из 32 томографических срезов"/);
 });
 
 test('production background excludes the expensive masked grid and animated full-page rings', async () => {
@@ -159,4 +159,14 @@ test('production background excludes the expensive masked grid and animated full
   const css = await readFile(new URL('../src/style.css', import.meta.url), 'utf8');
   assert.doesNotMatch(main + css, /ambient-grid|ambient-orbit|mask-image/);
   assert.match(main, /class="ambient" aria-hidden="true"><\/div>/);
+});
+
+test('mobile stories use bounded native snapping without clones or JavaScript scroll corrections', async () => {
+  const source = await readFile(new URL('../src/showcase.js', import.meta.url), 'utf8');
+  const css = await readFile(new URL('../src/revision.css', import.meta.url), 'utf8');
+  assert.doesNotMatch(source, /cloneNode|scrollLeft|addEventListener\('scroll'|setTimeout/);
+  assert.match(css, /scroll-snap-stop: always/);
+  assert.match(css, /scroll-snap-type: x mandatory/);
+  assert.match(source, /entry.intersectionRatio >= \.55/);
+  assert.doesNotMatch(processCards(), /document-stamp|document-check|условиям|кейс/);
 });

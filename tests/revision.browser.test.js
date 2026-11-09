@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-test('foreground arc, interactive graph, security SVGs and infinite mobile stories', { skip: !process.env.REVISION_URL }, async () => {
+test('compact UI, interactive graph, corner ROI and bounded native mobile stories', { skip: !process.env.REVISION_URL }, async () => {
   const { firefox } = await import('../.verification/node_modules/playwright/index.mjs');
   const { default: axe } = await import('../.verification/node_modules/axe-core/axe.js');
   const browser = await firefox.launch({
@@ -14,6 +14,10 @@ test('foreground arc, interactive graph, security SVGs and infinite mobile stori
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(process.env.REVISION_URL);
+    assert.doesNotMatch(await page.locator('body').innerText(), /из кейса|условиям кейса|учебного|Вводная кейса|СИНТЕТИЧЕСКАЯ/);
+    assert.equal(await page.locator('.hero-badge svg').count(), 1);
+    assert.match(await page.locator('.hero-badge').innerText(), /врача-рентгенолога/i);
+    assert.equal(await page.locator('.metrics, sup').count(), 0);
     await page.locator('.impact-figure').scrollIntoViewIfNeeded();
     await page.waitForFunction(() => document.querySelector('#clinics').classList.contains('impact-complete'));
     await page.locator('[data-scenario="manual"]').hover();
@@ -28,7 +32,7 @@ test('foreground arc, interactive graph, security SVGs and infinite mobile stori
     await page.locator('#clinics').screenshot({ path: '.verification/new-impact.png' });
     await page.locator('.showcase').scrollIntoViewIfNeeded();
     assert.equal(await page.locator('.ring-back').first().evaluate(e => getComputedStyle(e).display), 'none');
-    assert.equal(await page.locator('.showcase-stage').evaluate(e => getComputedStyle(e).height), '330px');
+    assert.equal(await page.locator('.showcase-stage').evaluate(e => getComputedStyle(e).height), '280px');
     await page.locator('.showcase').screenshot({ path: '.verification/new-arc.png' });
     await page.locator('.security-list article').nth(1).hover();
     assert.equal(await page.locator('.security-list .security-art svg').count(), 3);
@@ -44,29 +48,54 @@ test('foreground arc, interactive graph, security SVGs and infinite mobile stori
     }
     const mobile = await browser.newPage({ viewport: { width: 390, height: 850 }, hasTouch: true, isMobile: true });
     await mobile.goto(process.env.REVISION_URL);
+    await mobile.waitForSelector('#scan-viewer[data-state=loaded]');
+    await mobile.screenshot({ path: '.verification/compact-mobile-hero.png', fullPage: false });
+    await mobile.locator('#scan-viewer').scrollIntoViewIfNeeded();
+    await mobile.locator('.scan-roi-box').tap({ force: true });
+    await mobile.waitForFunction(() => document.querySelector('#scan-viewer').dataset.analysisState === 'complete');
+    assert.equal(await mobile.locator('#scan-viewer').getAttribute('data-rotating'), 'false');
+    assert.equal(await mobile.locator('.scan-hint').isVisible(), false);
+    const held = await mobile.locator('#scan-viewer').getAttribute('data-rotation-y');
+    await mobile.waitForTimeout(200);
+    assert.equal(await mobile.locator('#scan-viewer').getAttribute('data-rotation-y'), held);
+    const panelBounds = await mobile.locator('.scan-analysis').boundingBox();
+    const controlsBounds = await mobile.locator('.scan-bottom').boundingBox();
+    assert(panelBounds.y + panelBounds.height <= controlsBounds.y);
+    await mobile.locator('#scan-viewer').screenshot({ path: '.verification/compact-mobile-report.png' });
+    await mobile.keyboard.press('Escape');
     await mobile.locator('.process').scrollIntoViewIfNeeded();
+    await mobile.waitForSelector('#scan-viewer[data-scene-visible="false"]');
     assert.equal(await mobile.locator('.process').evaluate(e => getComputedStyle(e).display), 'flex');
+    assert.equal(await mobile.locator('.process-card').count(), 3);
+    assert.equal(await mobile.locator('[data-clone]').count(), 0);
+    assert.equal(await mobile.locator('.process-card').first().evaluate(e => getComputedStyle(e).scrollSnapStop), 'always');
     const originals = mobile.locator('.process-card:not([data-clone])');
     await mobile.waitForTimeout(500);
     assert.equal(await originals.first().getAttribute('data-visible'), 'true');
     assert.equal(await originals.first().locator('.sheet-front').evaluate(e => getComputedStyle(e).animationName), 'story-front');
-    const align = async selector => {
-      await mobile.locator(selector).evaluate(card => {
-        const rail = card.parentElement;
-        rail.scrollLeft += card.getBoundingClientRect().left - rail.getBoundingClientRect().left;
-      });
-      await mobile.waitForTimeout(650);
-    };
     const nearest = () => mobile.locator('.process').evaluate(rail => {
       const x = rail.getBoundingClientRect().left;
       const card = [...rail.children].sort((a, b) => Math.abs(a.getBoundingClientRect().left - x) - Math.abs(b.getBoundingClientRect().left - x))[0];
       return { clone: card.dataset.clone || '', title: card.querySelector('h3').textContent };
     });
-    await align('[data-clone="-before"]');
+    const railBounds = await mobile.locator('.process').boundingBox();
+    await mobile.mouse.move(railBounds.x + 100, Math.max(10, railBounds.y + 100));
+    const swipe = async delta => { await mobile.mouse.wheel(delta, 0); await mobile.waitForTimeout(700); };
+    await swipe(1200);
+    assert.deepEqual(await nearest(), { clone: '', title: 'Второй взгляд ИИ' });
+    await swipe(1200);
     assert.deepEqual(await nearest(), { clone: '', title: 'Примите решение' });
-    await align('[data-clone="-after"]');
+    await mobile.locator('.process').screenshot({ path: '.verification/compact-decision.png' });
+    await swipe(1200);
+    assert.deepEqual(await nearest(), { clone: '', title: 'Примите решение' });
+    await swipe(-1200);
+    assert.deepEqual(await nearest(), { clone: '', title: 'Второй взгляд ИИ' });
+    await swipe(-1200);
     assert.deepEqual(await nearest(), { clone: '', title: 'Снимок из PACS' });
     await mobile.screenshot({ path: '.verification/new-mobile-stories.png' });
+    const contentBounds = await originals.first().locator('.step-tag').boundingBox();
+    const artBounds = await originals.first().locator('.story-art').boundingBox();
+    assert(artBounds.y >= contentBounds.y + contentBounds.height);
     await mobile.locator('[data-scenario="assisted"]').tap();
     assert.equal(await mobile.locator('#clinics').getAttribute('data-highlight'), 'assisted');
     await mobile.locator('[data-scenario="manual"]').tap();
