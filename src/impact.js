@@ -13,10 +13,10 @@ const scenarios = {
   assisted: { label: 'С NeuroScan', minutes: impactData.assistedMinutes, detail: 'ИИ готовит черновик' },
 };
 
-export function impactMarkup(arrow) {
+export function impactMarkup() {
   return `<section id="clinics" class="impact-section" data-highlight="assisted" aria-labelledby="impact-title">
     <div class="wrap">
-      <div class="impact-heading"><div><p class="eyebrow">Экономика клиники</p><h2 id="impact-title">Меньше рутины.<br><span>Больше времени врачу.</span></h2></div><p class="impact-lead">4 часа в день.<br><strong>88 часов за месяц.</strong></p></div>
+      <div class="impact-heading"><div><p class="eyebrow">Экономика клиники</p><h2 id="impact-title">Меньше рутины.<br><span>Больше времени врачу.</span></h2></div><div class="impact-saving"><span class="saving-caption"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Экономия времени на описании</span><div class="saving-flow"><span><strong>4 часа</strong><small>в день</small></span><svg viewBox="0 0 40 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2 12h34m-8-8 8 8-8 8"/></svg><span><strong>около 90 часов</strong><small>в месяц</small></span></div><span class="saving-note">В среднем при 22 рабочих днях</span></div></div>
       <figure class="impact-figure" aria-labelledby="impact-chart-caption">
         <figcaption id="impact-chart-caption"><span>Время на описание 60 исследований</span><span>Выберите линию</span></figcaption>
         <div class="impact-comparison"><div class="impact-plot">
@@ -36,8 +36,7 @@ export function impactMarkup(arrow) {
         <div class="impact-readout"><span class="impact-readout-label" data-impact-scenario>С NeuroScan</span><p class="impact-value" aria-hidden="true"><span data-impact-value>360</span><span>минут</span></p><p class="sr-only" data-impact-accessible role="status">С NeuroScan: 360 минут на 60 исследований.</p><span class="impact-detail" data-impact-detail>ИИ готовит черновик</span></div></div>
         <p class="impact-axis-caption">Исследований за день</p>
       </figure>
-      <div class="impact-business"><div><strong>+35%</strong><span>Пропускная способность отделения</span></div><div><strong>в 2,5 раза</strong><span>Снижение риска врачебной ошибки</span></div><div><strong>от 3 месяцев</strong><span>Срок окупаемости внедрения</span></div></div>
-      <div class="impact-footer"><p class="impact-assumptions">Расчёт: 60 исследований × 4 минуты × 22 рабочих дня = 88 часов</p><a class="text-link" href="#demo">Обсудить пилот ${arrow}</a></div>
+      <div class="impact-business"><div><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M4 17V7m0 0h10M4 7l8 8m8-8v10m0 0H10m10 0-8-8"/></svg>Пропускная способность отделения</span><strong>+35%</strong></div><div><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 8 4v6c0 4-5 7-8 9-3-2-8-5-8-9V7Zm-4 9 3 3 5-6"/></svg>Снижение риска врачебной ошибки</span><strong>в 2,5 раза</strong></div><div><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M8 2h8m-4 0v3m7 0 2 2M12 9v5l3 2"/><circle cx="12" cy="14" r="8"/></svg>Окупаемость внедрения в клинику</span><strong>от 3 месяцев</strong></div></div>
     </div>
   </section>`;
 }

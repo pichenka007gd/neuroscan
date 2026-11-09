@@ -44,12 +44,22 @@ const vertexShader = `
   varying float vIntensity;
   varying vec3 vPosition;
   uniform float pointScale;
+  uniform vec2 pointer;
+  uniform vec2 viewport;
+  uniform float pointerStrength;
   void main() {
     vIntensity = intensity;
     vPosition = position;
     vec4 mv = modelViewMatrix * vec4(position, 1.0);
     gl_PointSize = clamp(pointScale / -mv.z, 1.0, 3.8);
-    gl_Position = projectionMatrix * mv;
+    vec4 clip = projectionMatrix * mv;
+    vec2 screen = (clip.xy / clip.w * 0.5 + 0.5) * viewport;
+    vec2 delta = screen - pointer;
+    float distance = length(delta);
+    float influence = 1.0 - smoothstep(0.0, 64.0, distance);
+    vec2 push = delta / max(distance, 1.0) * influence * influence * pointerStrength * 18.0;
+    clip.xy += push / viewport * 2.0 * clip.w;
+    gl_Position = clip;
   }
 `;
 
@@ -150,7 +160,8 @@ export async function mountViewer(container) {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(sampled.positions, 3));
     geometry.setAttribute('intensity', new THREE.BufferAttribute(sampled.intensities, 1));
-    const uniforms = { split: { value: 0.47 }, resolution: { value: 1 }, roi: { value: ROI }, pointScale: { value: 9 } };
+    const uniforms = { split: { value: 0.47 }, resolution: { value: 1 }, roi: { value: ROI }, pointScale: { value: 9 }, pointer: { value: new THREE.Vector2(-10000, -10000) }, viewport: { value: new THREE.Vector2(1, 1) }, pointerStrength: { value: 0 } };
+    let pointerTargetStrength = 0;
     const material = new THREE.ShaderMaterial({ uniforms, vertexShader, fragmentShader, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
     const cloud = new THREE.Points(geometry, material);
     group.add(cloud);
@@ -185,6 +196,8 @@ export async function mountViewer(container) {
     let stageWidth = 1;
     let stageHeight = 1;
     const moveCamera = () => {
+      uniforms.pointerStrength.value = THREE.MathUtils.lerp(uniforms.pointerStrength.value, pointerTargetStrength, .18);
+      if (Math.abs(uniforms.pointerStrength.value - pointerTargetStrength) < .001) uniforms.pointerStrength.value = pointerTargetStrength;
       camera.position.x = THREE.MathUtils.lerp(camera.position.x, cameraTarget.x, 0.14);
       camera.position.y = THREE.MathUtils.lerp(camera.position.y, cameraTarget.y, 0.14);
       if (Math.abs(camera.position.x - cameraTarget.x) < 0.0005) camera.position.x = cameraTarget.x;
@@ -194,7 +207,7 @@ export async function mountViewer(container) {
       container.dataset.cameraX = camera.position.x.toFixed(4);
       container.dataset.cameraY = camera.position.y.toFixed(4);
     };
-    const cameraSettling = () => Math.abs(camera.position.x - cameraTarget.x) > 0.0005 || Math.abs(camera.position.y - cameraTarget.y) > 0.0005;
+    const cameraSettling = () => Math.abs(camera.position.x - cameraTarget.x) > 0.0005 || Math.abs(camera.position.y - cameraTarget.y) > 0.0005 || Math.abs(uniforms.pointerStrength.value - pointerTargetStrength) > .0005;
     const rotating = () => !motion.matches && !motionPaused && !drag && !analysisOpen && mode === '3d';
     const draw = () => {
       if (disposed) return;
@@ -203,6 +216,7 @@ export async function mountViewer(container) {
       container.dataset.rotationX = group.rotation.x.toFixed(4);
       container.dataset.rotating = String(rotating());
       container.dataset.motionPaused = String(motionPaused);
+      container.dataset.pointerStrength = uniforms.pointerStrength.value.toFixed(4);
       const width = stageWidth;
       const height = stageHeight;
       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -251,6 +265,7 @@ export async function mountViewer(container) {
       clearTimeout(revealTimer);
       clearTimeout(leaveTimer);
       analysisOpen = false;
+      pointerTargetStrength = 0;
       analysis.hidden = true;
       box.setAttribute('aria-expanded', 'false');
       container.dataset.analysisState = 'closed';
@@ -259,6 +274,7 @@ export async function mountViewer(container) {
       clearTimeout(leaveTimer);
       if (analysisOpen || annotation.hidden || drag || wiping) return;
       analysisOpen = true;
+      pointerTargetStrength = uniforms.pointerStrength.value;
       analysis.hidden = false;
       box.setAttribute('aria-expanded', 'true');
       cameraTarget.set(camera.position.x, camera.position.y);
@@ -343,10 +359,12 @@ export async function mountViewer(container) {
     });
     on(renderer.domElement, 'pointermove', event => {
       if (!drag) {
-        if (event.pointerType !== 'mouse' || motion.matches || motionPaused || mode !== '3d' || analysisOpen) return;
+        if (event.pointerType !== 'mouse' || motion.matches || mode !== '3d' || analysisOpen) return;
         const bounds = stage.getBoundingClientRect();
-        cameraTarget.set(((event.clientX - bounds.left) / bounds.width * 2 - 1) * 0.16, -((event.clientY - bounds.top) / bounds.height * 2 - 1) * 0.10);
-        if (!frame) synchronize();
+        uniforms.pointer.value.set(event.clientX - bounds.left, bounds.height - (event.clientY - bounds.top));
+        pointerTargetStrength = 1;
+        if (!motionPaused) cameraTarget.set(((event.clientX - bounds.left) / bounds.width * 2 - 1) * 0.16, -((event.clientY - bounds.top) / bounds.height * 2 - 1) * 0.10);
+        if (!frame) { lastTime = 0; frame = requestAnimationFrame(tick); }
         return;
       }
       if (event.pointerId !== drag.id) return;
@@ -366,6 +384,7 @@ export async function mountViewer(container) {
     on(renderer.domElement, 'pointercancel', endDrag);
     on(renderer.domElement, 'lostpointercapture', endDrag);
     on(renderer.domElement, 'pointerleave', () => {
+      if (!analysisOpen) pointerTargetStrength = 0;
       if (!analysisOpen && !motionPaused) cameraTarget.set(0, 0);
       if (!frame) synchronize();
     });
@@ -395,6 +414,8 @@ export async function mountViewer(container) {
     });
     on(motion, 'change', event => {
       if (event.matches) {
+        pointerTargetStrength = 0;
+        uniforms.pointerStrength.value = 0;
         clearTimeout(revealTimer);
         clearTimeout(leaveTimer);
         if (analysisOpen) { analysisText.textContent = ANALYSIS; container.dataset.analysisState = 'complete'; }
@@ -420,6 +441,7 @@ export async function mountViewer(container) {
       if (!width || !height) return;
       stageWidth = width;
       stageHeight = height;
+      uniforms.viewport.value.set(width, height);
       renderer.setSize(width, height);
       camera.aspect = width / height;
       camera.position.z = Math.max(3.7, 3.9 / camera.aspect);

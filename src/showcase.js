@@ -68,6 +68,19 @@ export function mountStoryCards(cards) {
 
 export function mountShowcase(section) {
   const stage = section.querySelector('.showcase-stage');
+  let inspected;
+  stage.addEventListener('pointerover', event => {
+    if (event.pointerType !== 'mouse') return;
+    const card = event.target.closest('.ring-front');
+    if (!card || card === inspected) return;
+    inspected?.classList.remove('is-inspected');
+    inspected = card;
+    inspected.classList.add('is-inspected');
+  });
+  stage.addEventListener('pointerleave', () => {
+    inspected?.classList.remove('is-inspected');
+    inspected = null;
+  });
   const hint = section.querySelector('.ring-hint');
   const sizeStage = () => section.style.setProperty('--showcase-viewport-width', `${document.documentElement.clientWidth}px`);
   sizeStage();

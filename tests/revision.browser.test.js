@@ -24,6 +24,14 @@ test('compact UI, interactive graph, corner ROI and bounded native mobile storie
     assert.match(await page.locator('.hero-access-note').innerText(), /подтверждение статуса клиники/);
     assert.match(await page.locator('#security').innerText(), /Серверы в РФ/);
     assert.match(await page.locator('#security').innerText(), /Разметка врачами/);
+    assert.match(await page.locator('.impact-saving').innerText(), /около 90 часов/);
+    assert.equal(await page.locator('.impact-footer').count(), 0);
+    assert.equal(await page.locator('.hero-badge circle').count(), 0);
+    await page.mouse.move(300, 220);
+    await page.waitForFunction(() => getComputedStyle(document.querySelector('.cursor-glow')).opacity === '1');
+    assert.equal(await page.locator('.cursor-glow').evaluate(e => getComputedStyle(e).opacity), '1');
+    assert.equal(await page.locator('.cursor-glow').evaluate(e => getComputedStyle(e).pointerEvents), 'none');
+    assert.equal(await page.locator('.cursor-glow').evaluate(e => getComputedStyle(e).zIndex), '-1');
     await page.locator('.impact-figure').scrollIntoViewIfNeeded();
     await page.waitForFunction(() => document.querySelector('#clinics').classList.contains('impact-complete'));
     assert.equal(await page.locator('.impact-readout button, .impact-scenarios').count(), 0);
@@ -52,14 +60,37 @@ test('compact UI, interactive graph, corner ROI and bounded native mobile storie
     assert.equal(await page.locator('.ring-back').first().evaluate(e => getComputedStyle(e).display), 'none');
     assert.equal(await page.locator('.showcase-stage').evaluate(e => getComputedStyle(e).height), '280px');
     await page.locator('.showcase').screenshot({ path: '.verification/new-arc.png' });
+    const card = page.locator('.ring-front').first();
+    for (let i = 0; i < 4; i++) {
+      await card.hover({ force: true });
+      await page.waitForTimeout(800);
+      assert.equal(await card.locator('img').evaluate(e => getComputedStyle(e).filter), 'blur(3px)');
+      assert.equal(await card.locator('.ring-glass').evaluate(e => getComputedStyle(e).opacity), '1');
+      assert.equal(await card.locator('.ring-glass').evaluate(e => getComputedStyle(e).backdropFilter), 'none');
+      assert.equal(await page.locator('.showcase-ring').evaluate(e => getComputedStyle(e).animationPlayState), 'running');
+    }
+    await page.mouse.move(0, 0);
+    await page.waitForTimeout(250);
+    assert.equal(await card.locator('img').evaluate(e => getComputedStyle(e).filter), 'none');
+    const securityCard = page.locator('.security-list article').nth(1);
+    await securityCard.scrollIntoViewIfNeeded();
+    await page.mouse.move(0, 0);
+    await page.waitForTimeout(750);
+    const securityBefore = await securityCard.boundingBox();
     await page.locator('.security-list article').nth(1).hover();
+    await page.waitForTimeout(400);
+    assert.deepEqual(await securityCard.boundingBox(), securityBefore);
     assert.equal(await page.locator('.security-list .security-art svg').count(), 3);
-    assert.equal(await page.locator('.security-list article').nth(1).locator('.security-draw').evaluate(e => getComputedStyle(e).animationName), 'security-draw');
+    assert.equal(await securityCard.locator('.security-draw').evaluate(e => getComputedStyle(e).animationName), 'none');
     await page.locator('#security').screenshot({ path: '.verification/new-security.png' });
     for (const width of [360, 390, 768, 1440]) {
       await page.setViewportSize({ width, height: 1000 });
       await page.waitForTimeout(200);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), width);
+      assert.equal(await page.locator('.process-band').evaluate(e => Math.round(e.getBoundingClientRect().width)), width);
+      for (const tile of await page.locator('.impact-business > div').all()) {
+        assert.equal(await tile.evaluate(e => e.firstElementChild.tagName), 'SPAN');
+      }
       for (const mark of await page.locator('.logo-mark').all()) {
         const box = await mark.boundingBox();
         assert(Math.abs(box.width - box.height) < .1);
@@ -129,6 +160,7 @@ test('compact UI, interactive graph, corner ROI and bounded native mobile storie
     assert.equal(await mobile.locator('[data-impact-value]').textContent(), '600');
     const reduced = await browser.newPage({ viewport: { width: 390, height: 850 }, hasTouch: true, reducedMotion: 'reduce' });
     await reduced.goto(process.env.REVISION_URL);
+    assert.equal(await reduced.locator('.cursor-glow').evaluate(e => getComputedStyle(e).display), 'none');
     await reduced.locator('.process').scrollIntoViewIfNeeded();
     assert.equal(await reduced.locator('.sheet-front').first().evaluate(e => getComputedStyle(e).animationName), 'none');
     assert.equal(await reduced.locator('.showcase-ring').evaluate(e => getComputedStyle(e).animationName), 'none');

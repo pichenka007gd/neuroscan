@@ -170,8 +170,31 @@ test('viewer pointer, annotation and motion regressions', { skip: !url }, async 
       await reduced.close();
     });
 
+    await t.test('GPU cursor field displaces nearby points and restores the unchanged geometry on leave', async () => {
+      const canvas = viewer.locator('canvas');
+      await page.mouse.move(0, 0);
+      await canvas.focus();
+      if (await viewer.getAttribute('data-motion-paused') !== 'true') await page.keyboard.press('Space');
+      await page.waitForFunction(() => document.querySelector('#scan-viewer').dataset.pointerStrength === '0.0000');
+      const held = await angle();
+      const before = await canvas.screenshot();
+      const bounds = await canvas.boundingBox();
+      await page.mouse.move(bounds.x + bounds.width * .4, bounds.y + bounds.height * .55);
+      await page.waitForFunction(() => Number(document.querySelector('#scan-viewer').dataset.pointerStrength) > .99);
+      const displaced = await canvas.screenshot();
+      assert.equal(await angle(), held);
+      assert.equal(before.equals(displaced), false);
+      await page.mouse.move(0, 0);
+      await page.waitForFunction(() => document.querySelector('#scan-viewer').dataset.pointerStrength === '0.0000');
+      const restored = await canvas.screenshot();
+      assert.equal(before.equals(restored), true);
+      await canvas.focus();
+      await page.keyboard.press('Space');
+    });
+
     await t.test('reduced motion stops ambient work, keeps arrows/drag and reveals text immediately', async () => {
       await page.emulateMedia({ reducedMotion: 'reduce' });
+      assert.equal(await viewer.getAttribute('data-pointer-strength'), '0.0000');
       await range.press('Home');
       const before = await angle();
       await viewer.locator('canvas').focus();

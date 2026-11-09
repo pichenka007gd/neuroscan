@@ -80,7 +80,9 @@ test('chart exposes both lines and labels as controls, with one numeric readout 
   assert.match(html, /600 минут, с ассистентом 360 минут/);
   assert.match(html, /88 часов за 22 рабочих дня/);
   assert.doesNotMatch(html, /impact-scenarios|impact-scenario"|data-impact-count|<input|data-segment/);
-  assert.equal((html.match(/href="#demo"/g) || []).length, 1);
+  assert.doesNotMatch(html, /impact-footer|impact-assumptions|Обсудить пилот/);
+  assert.match(html, /около 90 часов/);
+  assert.match(html, /<span><svg[^]*?Пропускная способность отделения<\/span><strong>\+35%/);
 });
 
 test('hover and focus select the line and interpolate one readout; rapid reselection cancels old animation', t => {

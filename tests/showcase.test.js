@@ -31,7 +31,8 @@ test('effects keep real depth, bounded slow rays, and a static reduced-motion la
   assert.match(css, /\.showcase \.showcase-ring \{ display: grid/);
   assert.doesNotMatch(css, /mask-image|(?<!backdrop-)filter: blur/);
   assert.doesNotMatch(css, /\.showcase:focus-within|:has\(\.showcase-stage:hover\)/);
-  assert.match(css, /\.ring-front:hover \.ring-glass/);
+  assert.match(css, /\.ring-front:is\(:hover, \.is-inspected\) \.ring-glass/);
+  assert.doesNotMatch(css, /backdrop-filter/);
   assert.doesNotMatch(css, /font-size: [7-9]px/);
 });
 
