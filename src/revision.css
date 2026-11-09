@@ -97,6 +97,10 @@
 .security-list h3 { font-size: 18px; }
 .security-list p { line-height: 1.7; color: #b0bcba; }
 .security-list article:is(:hover, :focus-visible) .security-art { color: #d7f8e4; }
+.security-list article:first-child:is(:hover, :focus-visible) .security-art svg > path:first-child { stroke-dasharray: 180; animation: security-shield .8s ease both; }
+.security-list article:is(:hover, :focus-visible) .security-draw { stroke-dasharray: 48; animation: security-check .65s ease both; }
+@keyframes security-shield { from { stroke-dashoffset: 180; } to { stroke-dashoffset: 0; } }
+@keyframes security-check { from { stroke-dashoffset: 48; } to { stroke-dashoffset: 0; } }
 @media (max-width: 1000px) {
   .impact-heading { display: flex; flex-direction: column; align-items: stretch; }
   .impact-saving { max-width: 480px; align-self: flex-end; }

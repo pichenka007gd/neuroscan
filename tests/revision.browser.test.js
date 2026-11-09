@@ -91,7 +91,11 @@ test('compact UI, interactive graph, corner ROI and bounded native mobile storie
     await page.waitForTimeout(400);
     assert.deepEqual(await securityCard.boundingBox(), securityBefore);
     assert.equal(await page.locator('.security-list .security-art svg').count(), 3);
-    assert.equal(await securityCard.locator('.security-draw').evaluate(e => getComputedStyle(e).animationName), 'none');
+    assert.equal(await securityCard.locator('.security-draw').evaluate(e => getComputedStyle(e).animationName), 'security-check');
+    await page.locator('.security-list article').first().hover();
+    assert.equal(await page.locator('.security-list article').first().locator('.security-art svg > path').first().evaluate(e => getComputedStyle(e).animationName), 'security-shield');
+    await page.locator('.security-list article').last().focus();
+    assert.equal(await page.locator('.security-list article').last().locator('.security-draw').evaluate(e => getComputedStyle(e).animationName), 'security-check');
     await page.locator('#security').screenshot({ path: '.verification/new-security.png' });
     for (const width of [360, 390, 768, 1440]) {
       await page.setViewportSize({ width, height: 1000 });
@@ -180,6 +184,8 @@ test('compact UI, interactive graph, corner ROI and bounded native mobile storie
     assert.equal(await reduced.locator('[data-impact-value]').textContent(), '360');
     await reduced.locator('.impact-label-manual').tap();
     assert.equal(await reduced.locator('[data-impact-value]').textContent(), '600');
+    await reduced.locator('.security-list article').last().focus();
+    assert.equal(await reduced.locator('.security-list article').last().locator('.security-draw').evaluate(e => getComputedStyle(e).animationName), 'none');
     assert.deepEqual(errors, []);
   } finally {
     await browser.close();
