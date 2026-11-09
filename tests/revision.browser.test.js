@@ -25,6 +25,10 @@ test('compact UI, interactive graph, corner ROI and bounded native mobile storie
     assert.match(await page.locator('#security').innerText(), /Серверы в РФ/);
     assert.match(await page.locator('#security').innerText(), /Разметка врачами/);
     assert.match(await page.locator('.impact-saving').innerText(), /около 90 часов/);
+    const titleBounds = await page.locator('.impact-heading > div').first().boundingBox();
+    const savingBounds = await page.locator('.impact-saving').boundingBox();
+    assert(savingBounds.x >= titleBounds.x + titleBounds.width + 20);
+    assert.equal(await page.locator('.security-flow, .security-quality, .security-human-check').count(), 0);
     assert.equal(await page.locator('.impact-footer').count(), 0);
     assert.equal(await page.locator('.hero-badge circle').count(), 0);
     await page.mouse.move(300, 220);

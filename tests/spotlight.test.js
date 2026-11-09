@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { mountSpotlight } from '../src/spotlight.js';
 
 test('cursor glow follows smoothly, coalesces movement, stops after settling and cancels on leave', t => {
@@ -47,4 +48,16 @@ test('cursor glow follows smoothly, coalesces movement, stops after settling and
   changed();
   events.pointermove({ pointerType: 'mouse', clientX: 100, clientY: 100 });
   assert.equal(pending.size, 0);
+});
+
+test('all glow lobes become transparent before the layer boundary instead of clipping at its edges', async () => {
+  const css = await readFile(new URL('../src/revision.css', import.meta.url), 'utf8');
+  const ellipses = [...css.matchAll(/ellipse (\d+)px (\d+)px at (\d+)px (\d+)px/g)];
+  assert.equal(ellipses.length, 3);
+  for (const [, ...values] of ellipses) {
+    const [rx, ry, x, y] = values.map(Number);
+    assert(Math.min(x - rx, y - ry, 640 - x - rx, 640 - y - ry) >= 24);
+  }
+  assert.match(css, /at 275px 288px, #39745d18, transparent 100%/);
+  assert.doesNotMatch(css, /repeating-radial-gradient/);
 });
