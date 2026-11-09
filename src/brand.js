@@ -1,0 +1,1 @@
+export const brandMark = '<svg class="logo-mark" width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M11 4H4v7M21 4h7v7M28 21v7h-7M11 28H4v-7" stroke="currentColor" stroke-width="1.6"/><path d="M16 8v16M8 16h16" stroke="currentColor" stroke-width="1.6"/><circle cx="16" cy="16" r="7" stroke="currentColor" stroke-opacity=".35"/></svg>';

@@ -76,7 +76,7 @@ export async function mountViewer(container) {
   container.dataset.state = 'loading';
   container.innerHTML = `
     <div class="scan-stage" aria-label="Интерактивная реконструкция томографии"></div>
-    <div class="scan-heading"><span class="scan-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 3H4a1 1 0 0 0-1 1v4m13-5h4a1 1 0 0 1 1 1v4M3 16v4a1 1 0 0 0 1 1h4m8 0h4a1 1 0 0 0 1-1v-4M7 12h10"/><circle cx="12" cy="12" r="3"/></svg></span><div><strong>Исследование</strong><span>NeuroScan Vision</span></div><span class="scan-series">3D</span></div>
+    <div class="scan-heading"><span class="scan-mark" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 9 5-9 5-9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5"/></svg></span><div><strong>Исследование</strong><span>NeuroScan Vision</span></div><span class="scan-series">3D</span></div>
     <div class="scan-status" role="status"><span class="scan-spinner"></span>Загрузка исследования…</div>
     <div class="scan-wipe" aria-hidden="true"><span>‹ ›</span></div>
     <div class="scan-side-labels" aria-hidden="true"><span>ИСХОДНЫЕ ДАННЫЕ</span><span>С АНАЛИЗОМ ИИ</span></div>

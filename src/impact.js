@@ -8,89 +8,116 @@ export const impactData = Object.freeze({
   monthlyHours: calculateHours(60),
 });
 
+const scenarios = {
+  manual: { label: 'Без NeuroScan', minutes: impactData.manualMinutes, detail: 'Описание вручную' },
+  assisted: { label: 'С NeuroScan', minutes: impactData.assistedMinutes, detail: 'ИИ готовит черновик' },
+};
+
 export function impactMarkup(arrow) {
-  const { studies, manualMinutes, assistedMinutes, savedMinutes, monthlyHours } = impactData;
-  return `<section id="clinics" class="impact-section" aria-labelledby="impact-title">
+  return `<section id="clinics" class="impact-section" data-highlight="assisted" aria-labelledby="impact-title">
     <div class="wrap">
-      <div class="impact-heading">
-        <div><p class="eyebrow">Для клиник</p><h2 id="impact-title">Верните время<br><span>врачу.</span></h2></div>
-        <div class="impact-stat"><span class="impact-model-label">ПРИМЕР ЭКОНОМИИ</span><p class="impact-number"><span data-impact-count aria-hidden="true">${monthlyHours}</span><span class="sr-only">${monthlyHours} часов</span><span aria-hidden="true">часов</span></p><p>на описание исследований за месяц</p><span class="impact-daily">4 часа в день × 22 рабочих дня = 88 часов</span></div>
-      </div>
+      <div class="impact-heading"><div><p class="eyebrow">Экономика клиники</p><h2 id="impact-title">Меньше рутины.<br><span>Больше времени врачу.</span></h2></div><p class="impact-lead">4 часа в день.<br><strong>88 часов за месяц.</strong></p></div>
       <figure class="impact-figure" aria-labelledby="impact-chart-caption">
-        <figcaption id="impact-chart-caption"><span>Накопленное время на описание</span><span>Один рабочий день</span></figcaption>
+        <figcaption id="impact-chart-caption"><span>Время на описание 60 исследований</span><span>Выберите линию</span></figcaption>
         <div class="impact-comparison"><div class="impact-plot">
-          <svg class="impact-chart" viewBox="0 0 1000 350" preserveAspectRatio="none" role="img" aria-labelledby="impact-chart-title impact-chart-desc">
-            <title id="impact-chart-title">Время на описание исследований</title><desc id="impact-chart-desc">Пример расчёта. 60 исследований: без ассистента 600 минут, с ассистентом 360 минут. Разница 240 минут в день, или 88 часов за 22 рабочих дня.</desc>
+          <svg class="impact-chart" viewBox="0 0 1000 350" preserveAspectRatio="none" role="group" aria-labelledby="impact-chart-title impact-chart-desc">
+            <title id="impact-chart-title">С NeuroScan и без</title><desc id="impact-chart-desc">Пример расчёта. 60 исследований: без ассистента 600 минут, с ассистентом 360 минут. Разница 240 минут в день, или 88 часов за 22 рабочих дня. Наведите на линию или выберите её клавишей Enter.</desc>
             <g class="impact-grid"><path d="M80 30H800 M80 170H800 M80 310H800"/></g>
             <path class="impact-gap" d="M80 310L800 30L800 142Z"/>
-            <g class="impact-series impact-series-manual"><path class="impact-line impact-line-manual" pathLength="1" d="M80 310L800 30"/><circle class="impact-trace impact-trace-manual" data-impact-dot="manual" cx="800" cy="30" r="4"/></g>
-            <g class="impact-series impact-series-assisted"><path class="impact-line impact-line-assisted" pathLength="1" d="M80 310L800 142"/><circle class="impact-trace impact-trace-assisted" data-impact-dot="assisted" cx="800" cy="142" r="4"/></g>
+            ${Object.entries(scenarios).map(([key, item]) => {
+              const y = key === 'manual' ? 30 : 142;
+              return `<g class="impact-series impact-series-${key}" data-scenario="${key}" tabindex="0" role="button" aria-label="${item.label}: ${item.minutes} минут" aria-pressed="${key === 'assisted'}"><path class="impact-line impact-line-${key}" pathLength="1" d="M80 310L800 ${y}"/><circle class="impact-trace impact-trace-${key}" data-impact-dot="${key}" cx="800" cy="${y}" r="4"/><path class="impact-hit" d="M80 310L800 ${y}"/></g>`;
+            }).join('')}
           </svg>
-          <div class="impact-y-axis" aria-hidden="true"><span>600</span><span>300</span><span>0</span></div>
-          <span class="impact-unit" aria-hidden="true">мин</span>
-          <div class="impact-x-axis" aria-hidden="true">${[0, 15, 30, 45, studies].map(value => `<span>${value}</span>`).join('')}</div>
+          <div class="impact-y-axis" aria-hidden="true"><span>600</span><span>300</span><span>0</span></div><span class="impact-unit" aria-hidden="true">мин</span>
+          <button class="impact-line-label impact-label-manual" data-scenario="manual" aria-pressed="false">Без NeuroScan</button><button class="impact-line-label impact-label-assisted" data-scenario="assisted" aria-pressed="true">С NeuroScan</button>
+          <div class="impact-x-axis" aria-hidden="true">${[0, 15, 30, 45, 60].map(value => `<span>${value}</span>`).join('')}</div>
         </div>
-        <div class="impact-scenarios" role="group" aria-label="Выделить линию на графике"><button class="impact-scenario" data-scenario="manual" aria-pressed="false"><span class="scenario-key">Без NeuroScan</span><strong>600 <span>мин</span></strong><span>10 минут на исследование</span><small>Всё описание — вручную</small></button><button class="impact-scenario" data-scenario="assisted" aria-pressed="false"><span class="scenario-key">С NeuroScan</span><strong>360 <span>мин</span></strong><span>6 минут на исследование</span><small>Врач проверяет подсказки ИИ</small></button></div></div><p class="impact-axis-caption">Исследований за день</p>
+        <div class="impact-readout"><span class="impact-readout-label" data-impact-scenario>С NeuroScan</span><p class="impact-value" aria-hidden="true"><span data-impact-value>360</span><span>минут</span></p><p class="sr-only" data-impact-accessible role="status">С NeuroScan: 360 минут на 60 исследований.</p><span class="impact-detail" data-impact-detail>ИИ готовит черновик</span></div></div>
+        <p class="impact-axis-caption">Исследований за день</p>
       </figure>
-      <div class="impact-footer"><p class="impact-assumptions">60 исследований в день · 10 → 6 минут на описание</p><a class="text-link" href="#demo">Обсудить пилот ${arrow}</a></div>
+      <div class="impact-business"><div><strong>+35%</strong><span>Пропускная способность отделения</span></div><div><strong>в 2,5 раза</strong><span>Снижение риска врачебной ошибки</span></div><div><strong>от 3 месяцев</strong><span>Срок окупаемости внедрения</span></div></div>
+      <div class="impact-footer"><p class="impact-assumptions">Расчёт: 60 исследований × 4 минуты × 22 рабочих дня = 88 часов</p><a class="text-link" href="#demo">Обсудить пилот ${arrow}</a></div>
     </div>
   </section>`;
 }
 
 export function mountImpact(root) {
-  const buttons = root.querySelectorAll('[data-scenario]');
-  let selected = '';
-  const highlight = value => {
-    root.dataset.highlight = value;
-    buttons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.scenario === value)));
-  };
-  buttons.forEach(button => {
-    button.addEventListener('pointerenter', event => { if (event.pointerType !== 'touch') highlight(button.dataset.scenario); });
-    button.addEventListener('pointerleave', () => highlight(selected));
-    button.addEventListener('focus', () => highlight(button.dataset.scenario));
-    button.addEventListener('blur', () => highlight(selected));
-    button.addEventListener('click', () => {
-      selected = selected === button.dataset.scenario ? '' : button.dataset.scenario;
-      highlight(selected);
-    });
-    button.addEventListener('keydown', event => {
-      if (event.key === 'Escape') { selected = ''; highlight(''); }
-    });
-  });
-  const count = root.querySelector('[data-impact-count]');
+  const controls = root.querySelectorAll('[data-scenario]');
+  const value = root.querySelector('[data-impact-value]');
+  const label = root.querySelector('[data-impact-scenario]');
+  const detail = root.querySelector('[data-impact-detail]');
+  const accessible = root.querySelector('[data-impact-accessible]');
   const dots = root.querySelectorAll('[data-impact-dot]');
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
-  if (motion.matches || !('IntersectionObserver' in window)) return;
-  let frame;
-  const observer = new IntersectionObserver(entries => {
-    if (!entries.some(entry => entry.isIntersecting)) return;
-    observer.disconnect();
-    root.classList.add('impact-running');
+  let selected = 'assisted';
+  let numberFrame = 0;
+  let introFrame = 0;
+  let observer;
+  const choose = key => {
+    if (key === selected) return;
+    selected = key;
+    const item = scenarios[key];
+    root.dataset.highlight = key;
+    controls.forEach(control => control.setAttribute('aria-pressed', String(control.dataset.scenario === key)));
+    label.textContent = item.label;
+    detail.textContent = item.detail;
+    accessible.textContent = `${item.label}: ${item.minutes} минут на 60 исследований.`;
+    cancelAnimationFrame(numberFrame);
+    const from = Number(value.textContent);
     const started = performance.now();
     const tick = now => {
-      const progress = motion.matches ? 1 : Math.min(1, (now - started) / 1800);
-      count.textContent = String(Math.max(1, Math.round(impactData.monthlyHours * progress)));
-      dots.forEach(dot => {
-        dot.setAttribute('cx', String(80 + 720 * progress));
-        dot.setAttribute('cy', String(310 - (dot.dataset.impactDot === 'manual' ? 280 : 168) * progress));
-      });
-      if (progress < 1) frame = requestAnimationFrame(tick);
-      else root.classList.replace('impact-running', 'impact-complete');
+      const progress = motion.matches ? 1 : Math.min(1, (now - started) / 420);
+      value.textContent = String(Math.round(from + (item.minutes - from) * (1 - (1 - progress) ** 3)));
+      numberFrame = progress < 1 ? requestAnimationFrame(tick) : 0;
     };
-    frame = requestAnimationFrame(tick);
-  }, { threshold: 0.25 });
-  root.classList.add('impact-ready');
-  count.textContent = '1';
-  observer.observe(root.querySelector('.impact-figure'));
-  motion.addEventListener('change', event => {
-    if (!event.matches) return;
-    observer.disconnect();
-    cancelAnimationFrame(frame);
+    if (motion.matches) value.textContent = String(item.minutes);
+    else numberFrame = requestAnimationFrame(tick);
+  };
+  controls.forEach(control => {
+    control.addEventListener('pointerenter', event => { if (event.pointerType !== 'touch') choose(control.dataset.scenario); });
+    control.addEventListener('focus', () => choose(control.dataset.scenario));
+    control.addEventListener('click', () => choose(control.dataset.scenario));
+    control.addEventListener('keydown', event => {
+      if (!['Enter', ' '].includes(event.key)) return;
+      event.preventDefault();
+      choose(control.dataset.scenario);
+    });
+  });
+  const finish = () => {
+    cancelAnimationFrame(introFrame);
     root.classList.remove('impact-ready', 'impact-running');
-    count.textContent = String(impactData.monthlyHours);
+    root.classList.add('impact-complete');
     dots.forEach(dot => {
       dot.setAttribute('cx', '800');
       dot.setAttribute('cy', dot.dataset.impactDot === 'manual' ? '30' : '142');
     });
+  };
+  if (!motion.matches && 'IntersectionObserver' in window) {
+    root.classList.add('impact-ready');
+    observer = new IntersectionObserver(entries => {
+      if (!entries.some(entry => entry.isIntersecting)) return;
+      observer.disconnect();
+      root.classList.add('impact-running');
+      const started = performance.now();
+      const tick = now => {
+        const progress = Math.min(1, (now - started) / 1400);
+        dots.forEach(dot => {
+          dot.setAttribute('cx', String(80 + 720 * progress));
+          dot.setAttribute('cy', String(310 - (dot.dataset.impactDot === 'manual' ? 280 : 168) * progress));
+        });
+        if (progress < 1) introFrame = requestAnimationFrame(tick);
+        else finish();
+      };
+      introFrame = requestAnimationFrame(tick);
+    }, { threshold: .25 });
+    observer.observe(root.querySelector('.impact-figure'));
+  } else finish();
+  motion.addEventListener('change', event => {
+    if (!event.matches) return;
+    observer?.disconnect();
+    finish();
+    cancelAnimationFrame(numberFrame);
+    value.textContent = String(scenarios[selected].minutes);
   });
 }

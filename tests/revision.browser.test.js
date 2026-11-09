@@ -18,17 +18,35 @@ test('compact UI, interactive graph, corner ROI and bounded native mobile storie
     assert.equal(await page.locator('.hero-badge svg').count(), 1);
     assert.match(await page.locator('.hero-badge').innerText(), /врача-рентгенолога/i);
     assert.equal(await page.locator('.metrics, sup').count(), 0);
+    assert.equal(await page.locator('.logo-mark').count(), 2);
+    assert.equal(await page.locator('.logo-mark').first().innerHTML(), await page.locator('.logo-mark').last().innerHTML());
+    assert.match(await page.locator('h1').innerText(), /Сократите время на описание снимков КТ и рентгена на 40%/);
+    assert.match(await page.locator('.hero-access-note').innerText(), /подтверждение статуса клиники/);
+    assert.match(await page.locator('#security').innerText(), /Серверы в РФ/);
+    assert.match(await page.locator('#security').innerText(), /Разметка врачами/);
     await page.locator('.impact-figure').scrollIntoViewIfNeeded();
     await page.waitForFunction(() => document.querySelector('#clinics').classList.contains('impact-complete'));
-    await page.locator('[data-scenario="manual"]').hover();
+    assert.equal(await page.locator('.impact-readout button, .impact-scenarios').count(), 0);
+    assert.equal(await page.locator('[data-impact-value]').textContent(), '360');
+    await page.locator('.impact-series-manual .impact-hit').hover({ force: true });
+    await page.waitForTimeout(100);
+    const intermediate = Number(await page.locator('[data-impact-value]').textContent());
+    assert(intermediate > 360 && intermediate < 600);
     await page.waitForTimeout(550);
     assert.equal(await page.locator('#clinics').getAttribute('data-highlight'), 'manual');
     assert.equal(await page.locator('.impact-series-assisted').evaluate(e => getComputedStyle(e).opacity), '0.18');
     assert.notEqual(await page.locator('.impact-series-manual').evaluate(e => getComputedStyle(e).transform), 'none');
-    await page.locator('[data-scenario="assisted"]').focus();
+    assert.equal(await page.locator('[data-impact-value]').textContent(), '600');
+    await page.locator('.impact-label-assisted').focus();
     assert.equal(await page.locator('#clinics').getAttribute('data-highlight'), 'assisted');
-    await page.locator('[data-scenario="assisted"]').press('Escape');
-    assert.equal(await page.locator('#clinics').getAttribute('data-highlight'), '');
+    await page.waitForTimeout(500);
+    assert.equal(await page.locator('[data-impact-value]').textContent(), '360');
+    await page.locator('.impact-series-manual').focus();
+    await page.locator('.impact-series-manual').press('Enter');
+    assert.equal(await page.locator('#clinics').getAttribute('data-highlight'), 'manual');
+    assert.equal(await page.locator('.impact-series-manual .impact-line').evaluate(e => getComputedStyle(e).strokeWidth), '5px');
+    await page.locator('.impact-series-assisted .impact-hit').hover({ force: true });
+    await page.waitForTimeout(500);
     await page.locator('#clinics').screenshot({ path: '.verification/new-impact.png' });
     await page.locator('.showcase').scrollIntoViewIfNeeded();
     assert.equal(await page.locator('.ring-back').first().evaluate(e => getComputedStyle(e).display), 'none');
@@ -42,6 +60,13 @@ test('compact UI, interactive graph, corner ROI and bounded native mobile storie
       await page.setViewportSize({ width, height: 1000 });
       await page.waitForTimeout(200);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), width);
+      for (const mark of await page.locator('.logo-mark').all()) {
+        const box = await mark.boundingBox();
+        assert(Math.abs(box.width - box.height) < .1);
+      }
+      for (const selector of ['#technology', '.showcase', '#clinics', '#security', '#demo']) {
+        assert.equal(await page.locator(selector).evaluate(e => getComputedStyle(e).borderTopStyle), 'solid');
+      }
       await page.addScriptTag({ content: axe.source });
       const violations = await page.evaluate(async () => (await window.axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21aa'] } })).violations);
       assert.deepEqual(violations.map(v => ({ id: v.id, nodes: v.nodes.map(n => n.target) })), []);
@@ -96,16 +121,20 @@ test('compact UI, interactive graph, corner ROI and bounded native mobile storie
     const contentBounds = await originals.first().locator('.step-tag').boundingBox();
     const artBounds = await originals.first().locator('.story-art').boundingBox();
     assert(artBounds.y >= contentBounds.y + contentBounds.height);
-    await mobile.locator('[data-scenario="assisted"]').tap();
+    await mobile.locator('.impact-label-assisted').tap();
     assert.equal(await mobile.locator('#clinics').getAttribute('data-highlight'), 'assisted');
-    await mobile.locator('[data-scenario="manual"]').tap();
+    await mobile.locator('.impact-series-manual .impact-hit').tap({ force: true });
     assert.equal(await mobile.locator('#clinics').getAttribute('data-highlight'), 'manual');
+    await mobile.waitForTimeout(500);
+    assert.equal(await mobile.locator('[data-impact-value]').textContent(), '600');
     const reduced = await browser.newPage({ viewport: { width: 390, height: 850 }, hasTouch: true, reducedMotion: 'reduce' });
     await reduced.goto(process.env.REVISION_URL);
     await reduced.locator('.process').scrollIntoViewIfNeeded();
     assert.equal(await reduced.locator('.sheet-front').first().evaluate(e => getComputedStyle(e).animationName), 'none');
     assert.equal(await reduced.locator('.showcase-ring').evaluate(e => getComputedStyle(e).animationName), 'none');
-    assert.equal(await reduced.locator('[data-impact-count]').textContent(), '88');
+    assert.equal(await reduced.locator('[data-impact-value]').textContent(), '360');
+    await reduced.locator('.impact-label-manual').tap();
+    assert.equal(await reduced.locator('[data-impact-value]').textContent(), '600');
     assert.deepEqual(errors, []);
   } finally {
     await browser.close();
