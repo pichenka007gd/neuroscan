@@ -97,6 +97,8 @@
 .security-list h3 { font-size: 18px; }
 .security-list p { line-height: 1.7; color: #b0bcba; }
 .security-list article:is(:hover, :focus-visible) .security-art { color: #d7f8e4; }
+.security-list article:is(:hover, :focus-visible) .security-art svg { transform-origin: center; animation: security-icon-float 1.8s ease-in-out infinite; }
+@keyframes security-icon-float { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-4px) rotate(-4deg); } }
 .security-list article:first-child:is(:hover, :focus-visible) .security-art svg > path:first-child { stroke-dasharray: 180; animation: security-shield .8s ease both; }
 .security-list article:is(:hover, :focus-visible) .security-draw { stroke-dasharray: 48; animation: security-check .65s ease both; }
 @keyframes security-shield { from { stroke-dashoffset: 180; } to { stroke-dashoffset: 0; } }

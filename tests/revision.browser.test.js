@@ -96,6 +96,20 @@ test('compact UI, interactive graph, corner ROI and bounded native mobile storie
     assert.equal(await page.locator('.security-list article').first().locator('.security-art svg > path').first().evaluate(e => getComputedStyle(e).animationName), 'security-shield');
     await page.locator('.security-list article').last().focus();
     assert.equal(await page.locator('.security-list article').last().locator('.security-draw').evaluate(e => getComputedStyle(e).animationName), 'security-check');
+    for (const tile of await page.locator('.security-list article').all()) {
+      await tile.hover();
+      const tileBounds = await tile.boundingBox();
+      const icon = tile.locator('.security-art svg');
+      await page.waitForTimeout(1100);
+      const firstTransform = await icon.evaluate(e => getComputedStyle(e).transform);
+      await page.waitForTimeout(250);
+      assert.notEqual(await icon.evaluate(e => getComputedStyle(e).transform), firstTransform);
+      assert.equal(await icon.evaluate(e => getComputedStyle(e).animationIterationCount), 'infinite');
+      assert.deepEqual(await tile.boundingBox(), tileBounds);
+      await page.mouse.move(0, 0);
+      await tile.evaluate(e => e.blur());
+      assert.equal(await icon.evaluate(e => getComputedStyle(e).animationName), 'none');
+    }
     await page.locator('#security').screenshot({ path: '.verification/new-security.png' });
     for (const width of [360, 390, 768, 1440]) {
       await page.setViewportSize({ width, height: 1000 });
@@ -186,6 +200,7 @@ test('compact UI, interactive graph, corner ROI and bounded native mobile storie
     assert.equal(await reduced.locator('[data-impact-value]').textContent(), '600');
     await reduced.locator('.security-list article').last().focus();
     assert.equal(await reduced.locator('.security-list article').last().locator('.security-draw').evaluate(e => getComputedStyle(e).animationName), 'none');
+    assert.equal(await reduced.locator('.security-list article').last().locator('.security-art svg').evaluate(e => getComputedStyle(e).animationName), 'none');
     assert.deepEqual(errors, []);
   } finally {
     await browser.close();
