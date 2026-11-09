@@ -222,7 +222,7 @@ export async function mountViewer(container) {
       box.style.width = `${maxX - minX}px`;
       box.style.height = `${maxY - minY}px`;
       annotation.hidden = uniforms.split.value >= 1 || maxX <= width * uniforms.split.value;
-      annotation.style.clipPath = `inset(-24px -140px -24px ${Math.max(0, width * uniforms.split.value - minX)}px)`;
+      annotation.style.clipPath = `inset(-34px -140px -24px ${Math.max(0, width * uniforms.split.value - minX)}px)`;
       if (annotation.hidden && analysisOpen) closeAnalysis();
     };
     const tick = time => {
@@ -235,12 +235,17 @@ export async function mountViewer(container) {
       if (rotating() || cameraSettling()) frame = requestAnimationFrame(tick);
     };
     const synchronize = () => {
-      cancelAnimationFrame(frame);
-      frame = 0;
-      lastTime = 0;
-      if (!visible || document.hidden || disposed) return;
+      if (!visible || document.hidden || disposed) {
+        cancelAnimationFrame(frame);
+        frame = 0;
+        lastTime = 0;
+        return;
+      }
       draw();
-      if (rotating() || cameraSettling()) frame = requestAnimationFrame(tick);
+      if ((rotating() || cameraSettling()) && !frame) {
+        lastTime = 0;
+        frame = requestAnimationFrame(tick);
+      }
     };
     const closeAnalysis = () => {
       clearTimeout(revealTimer);
@@ -252,7 +257,7 @@ export async function mountViewer(container) {
     };
     const openAnalysis = () => {
       clearTimeout(leaveTimer);
-      if (analysisOpen || annotation.hidden || drag) return;
+      if (analysisOpen || annotation.hidden || drag || wiping) return;
       analysisOpen = true;
       analysis.hidden = false;
       box.setAttribute('aria-expanded', 'true');
@@ -270,6 +275,7 @@ export async function mountViewer(container) {
       synchronize();
     };
     const resetSplit = () => {
+      closeAnalysis();
       uniforms.split.value = Number(range.value) / 100;
       container.style.setProperty('--scan-split', `${range.value}%`);
       range.setAttribute('aria-valuetext', `${range.value}% исходных данных, ${100 - Number(range.value)}% симуляции анализа`);

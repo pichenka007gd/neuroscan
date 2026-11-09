@@ -70,6 +70,29 @@ test('viewer pointer, annotation and motion regressions', { skip: !url }, async 
       assert.equal(await viewer.getAttribute('data-rotating'), 'true');
     });
 
+    await t.test('continuous native slider and divider dragging do not reset the rotation clock', async () => {
+      await page.mouse.move(0, 0);
+      const handle = await viewer.locator('.scan-wipe > span').boundingBox();
+      await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2);
+      await page.mouse.down();
+      const start = await angle();
+      for (let i = 0; i < 50; i++) {
+        await page.mouse.move(handle.x + handle.width / 2 + i * 2, handle.y + handle.height / 2);
+        await page.waitForTimeout(8);
+      }
+      assert.equal(await viewer.getAttribute('data-rotating'), 'true');
+      assert(await angle() > start + .035);
+      await page.mouse.up();
+      await range.press('Home');
+      const nativeStart = await angle();
+      for (let i = 0; i < 45; i++) {
+        await range.press('ArrowRight');
+        await page.waitForTimeout(8);
+      }
+      assert(await angle() > nativeStart + .035);
+      await range.press('Home');
+    });
+
     await t.test('ROI hover generates visual text once, freezes target, Escape closes; original-only hides analysis', async () => {
       const hotspot = viewer.locator('.scan-roi-box');
       const bounds = await hotspot.boundingBox();
@@ -78,10 +101,19 @@ test('viewer pointer, annotation and motion regressions', { skip: !url }, async 
       assert.equal(await viewer.getAttribute('data-rotating'), 'false');
       const generatingHeight = (await viewer.locator('.scan-analysis').boundingBox()).height;
       assert.notEqual(await hotspot.evaluate(element => getComputedStyle(element).backgroundImage), 'none');
+      const style = await hotspot.evaluate(element => ({
+        border: getComputedStyle(element).borderTopWidth,
+        outline: getComputedStyle(element).outlineWidth,
+        shadow: getComputedStyle(element).boxShadow,
+      }));
+      assert.equal(style.border, '1px');
+      assert.equal(style.outline, '2px');
+      assert.notEqual(style.shadow, 'none');
       await page.waitForFunction(() => document.querySelector('#scan-viewer').dataset.analysisState === 'complete');
       assert.match(await viewer.locator('.scan-analysis-text').innerText(), /Требуется оценка специалиста/);
       assert.match(await viewer.locator('.scan-analysis').innerText(), /Отклонение от нормы · 18,6%/);
       assert.match(await viewer.locator('.scan-analysis').innerText(), /Не клиническая оценка/);
+      await viewer.screenshot({ path: '.verification/new-roi.png' });
       assert.equal(await viewer.locator('.scan-analysis [aria-live]').count(), 0);
       const held = await angle();
       const heldCamera = [await viewer.getAttribute('data-camera-x'), await viewer.getAttribute('data-camera-y')];

@@ -23,7 +23,9 @@ test('impact chart has accessible static totals, linear cumulative paths and a s
   assert.match(markup, /pathLength="1" d="M80 310L800 142"/);
   for (const tick of [0, 15, 30, 45, 60]) assert.ok(markup.includes(`<span>${tick}</span>`));
   assert.equal((markup.match(/href="#demo"/g) || []).length, 1);
-  assert.doesNotMatch(markup, /<input|<button|data-segment|type="range"/);
+  assert.doesNotMatch(markup, /<input|data-segment|type="range"/);
+  assert.equal((markup.match(/class="impact-scenario"/g) || []).length, 2);
+  assert.match(markup, /4 часа в день × 22 рабочих дня = 88 часов/);
 });
 
 test('reduced motion leaves final static number and does not observe or schedule animation', () => {
@@ -33,6 +35,44 @@ test('reduced motion leaves final static number and does not observe or schedule
   try {
     mountImpact({ querySelector: () => count, querySelectorAll: () => [] });
     assert.equal(count.textContent, '88');
+  } finally {
+    if (previous === undefined) delete globalThis.window;
+    else globalThis.window = previous;
+  }
+});
+
+test('graph highlights hover and focus, supports persistent touch selection and Escape', () => {
+  const previous = globalThis.window;
+  const buttons = ['manual', 'assisted'].map(scenario => ({
+    dataset: { scenario }, events: {},
+    addEventListener(name, callback) { this.events[name] = callback; },
+    setAttribute(name, value) { this[name] = value; },
+  }));
+  const root = {
+    dataset: {},
+    querySelector: () => ({ textContent: '88' }),
+    querySelectorAll: selector => selector === '[data-scenario]' ? buttons : [],
+  };
+  globalThis.window = { matchMedia: () => ({ matches: true }) };
+  try {
+    mountImpact(root);
+    buttons[0].events.pointerenter({ pointerType: 'mouse' });
+    assert.equal(root.dataset.highlight, 'manual');
+    assert.equal(buttons[1]['aria-pressed'], 'false');
+    buttons[0].events.pointerleave();
+    assert.equal(root.dataset.highlight, '');
+    buttons[1].events.click();
+    buttons[1].events.pointerleave();
+    assert.equal(root.dataset.highlight, 'assisted');
+    assert.equal(buttons[1]['aria-pressed'], 'true');
+    buttons[0].events.focus();
+    assert.equal(root.dataset.highlight, 'manual');
+    buttons[0].events.blur();
+    assert.equal(root.dataset.highlight, 'assisted');
+    buttons[1].events.keydown({ key: 'Escape' });
+    assert.equal(root.dataset.highlight, '');
+    buttons[0].events.pointerenter({ pointerType: 'touch' });
+    assert.equal(root.dataset.highlight, '');
   } finally {
     if (previous === undefined) delete globalThis.window;
     else globalThis.window = previous;
@@ -60,7 +100,7 @@ test('chart waits for viewport entry, counts once and settles at both exact endp
   globalThis.requestAnimationFrame = callback => { tick = callback; return ++scheduled; };
   const root = {
     querySelector: selector => selector === '.impact-figure' ? figure : count,
-    querySelectorAll: () => dots,
+    querySelectorAll: selector => selector === '[data-scenario]' ? [] : dots,
     classList: {
       add: name => classes.add(name),
       replace(from, to) { classes.delete(from); classes.add(to); },

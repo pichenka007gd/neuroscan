@@ -28,16 +28,58 @@ export function showcaseMarkup() {
 }
 
 export function mountStoryCards(cards) {
+  const rail = cards[0]?.parentElement;
+  const mobile = window.matchMedia('(max-width: 620px)');
+  const allCards = [...cards];
+  if (rail && cards.length > 1) {
+    const clone = (card, suffix) => {
+      const copy = card.cloneNode(true);
+      copy.setAttribute('aria-hidden', 'true');
+      copy.inert = true;
+      copy.dataset.clone = suffix;
+      copy.querySelectorAll('[id]').forEach(node => {
+        const id = node.id;
+        node.id += suffix;
+        copy.querySelectorAll(`[fill="url(#${id})"]`).forEach(target => target.setAttribute('fill', `url(#${node.id})`));
+      });
+      return copy;
+    };
+    const before = clone(cards[cards.length - 1], '-before');
+    const after = clone(cards[0], '-after');
+    rail.prepend(before);
+    rail.append(after);
+    allCards.push(before, after);
+    const align = card => { rail.scrollLeft += card.getBoundingClientRect().left - rail.getBoundingClientRect().left; };
+    const reset = () => { if (mobile.matches) align(cards[0]); };
+    let timer;
+    rail.addEventListener('scroll', () => {
+      clearTimeout(timer);
+      if (!mobile.matches) return;
+      timer = setTimeout(() => {
+        const x = rail.getBoundingClientRect().left;
+        if (Math.abs(before.getBoundingClientRect().left - x) < 5) align(cards[cards.length - 1]);
+        else if (Math.abs(after.getBoundingClientRect().left - x) < 5) align(cards[0]);
+      }, 120);
+    }, { passive: true });
+    requestAnimationFrame(reset);
+    mobile.addEventListener('change', reset);
+    let width = rail.clientWidth;
+    window.addEventListener('resize', () => {
+      if (rail.clientWidth === width) return;
+      width = rail.clientWidth;
+      reset();
+    });
+  }
   const allowed = window.matchMedia('(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)');
   const observer = new IntersectionObserver(entries => {
     entries.forEach(entry => { entry.target.dataset.visible = String(entry.isIntersecting); });
   }, { threshold: .1 });
   const updateVisibility = () => {
-    cards.forEach(card => { card.dataset.pageHidden = String(document.hidden); });
+    allCards.forEach(card => { card.dataset.pageHidden = String(document.hidden); });
   };
   document.addEventListener('visibilitychange', updateVisibility);
   updateVisibility();
-  cards.forEach(card => {
+  allCards.forEach(card => {
     observer.observe(card);
     let frame = 0;
     let pointer;

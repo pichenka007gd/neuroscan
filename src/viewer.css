@@ -129,33 +129,41 @@
   position: relative;
   display: block;
   padding: 0;
-  border: 0;
+  border: 1px solid #c1ffe4;
   border-radius: 0;
   pointer-events: auto;
   min-width: 25px;
   min-height: 25px;
   background:
-    linear-gradient(#a7e8cd, #a7e8cd) left top/11px 1px no-repeat,
-    linear-gradient(#a7e8cd, #a7e8cd) left top/1px 11px no-repeat,
-    linear-gradient(#a7e8cd, #a7e8cd) right top/11px 1px no-repeat,
-    linear-gradient(#a7e8cd, #a7e8cd) right top/1px 11px no-repeat,
-    linear-gradient(#a7e8cd, #a7e8cd) left bottom/11px 1px no-repeat,
-    linear-gradient(#a7e8cd, #a7e8cd) left bottom/1px 11px no-repeat,
-    linear-gradient(#a7e8cd, #a7e8cd) right bottom/11px 1px no-repeat,
-    linear-gradient(#a7e8cd, #a7e8cd) right bottom/1px 11px no-repeat;
+    linear-gradient(#e0fff1, #e0fff1) left top/16px 3px no-repeat,
+    linear-gradient(#e0fff1, #e0fff1) left top/3px 16px no-repeat,
+    linear-gradient(#e0fff1, #e0fff1) right top/16px 3px no-repeat,
+    linear-gradient(#e0fff1, #e0fff1) right top/3px 16px no-repeat,
+    linear-gradient(#e0fff1, #e0fff1) left bottom/16px 3px no-repeat,
+    linear-gradient(#e0fff1, #e0fff1) left bottom/3px 16px no-repeat,
+    linear-gradient(#e0fff1, #e0fff1) right bottom/16px 3px no-repeat,
+    linear-gradient(#e0fff1, #e0fff1) right bottom/3px 16px no-repeat,
+    #42ba8c24;
+  outline: 2px solid #06150ee6;
+  box-shadow: 0 0 14px #9fffdc45, inset 0 0 0 2px #07180f80;
 }
 
 .scan-viewer .scan-roi-box:hover:not(:disabled) {
-  background-color: #a7e8cd0b;
+  background-color: #79e8b536;
 }
 
 .scan-roi-box > span {
   position: absolute;
-  top: -21px;
+  top: -29px;
   left: 0;
   white-space: nowrap;
-  font-size: 10px;
-  color: #b7dccd;
+  font-size: 11px;
+  font-weight: 500;
+  color: #e0fff1;
+  background: #0c211bee;
+  border: 1px solid #9fdcc073;
+  border-radius: 4px;
+  padding: 3px 7px;
   pointer-events: none;
 }
 

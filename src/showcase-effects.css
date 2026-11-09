@@ -1,13 +1,13 @@
 .showcase { --ring-radius: clamp(380px, 43vw, 600px); --ring-card: clamp(70px, 8vw, 112px); --ring-duration: 90s; }
 .showcase .showcase-stage { position: relative; width: min(calc(100% + 80px), var(--showcase-viewport-width, 100%)); margin-left: calc((100% - min(calc(100% + 80px), var(--showcase-viewport-width, 100%))) / 2); height: clamp(380px, 38vw, 540px); overflow: hidden; perspective: 1300px; perspective-origin: 50% 44%; isolation: isolate; }
 .showcase-tilt, .showcase-ring { position: absolute; inset: 0; transform-style: preserve-3d; }
-.showcase-tilt { transform: translateY(-60px) rotateX(-14deg); }
+.showcase-tilt { transform: translateY(-100px) rotateX(-7deg); }
 .showcase-ring { animation: ring-orbit var(--ring-duration) linear infinite; animation-play-state: paused; }
 .showcase[data-motion="running"] .showcase-ring { animation-play-state: running; }
 .ring-slot { position: absolute; width: var(--ring-card); height: calc(var(--ring-card) * 1.26); top: 50%; left: 50%; transform-style: preserve-3d; transform: translate(-50%, -50%) rotateY(var(--angle)) translateZ(var(--ring-radius)); }
 .ring-front, .ring-back { position: absolute; inset: 0; margin: 0; border: 1px solid #bcd4c452; border-radius: 7px; background: #101b17; overflow: hidden; backface-visibility: hidden; }
 .ring-front { transform: translateZ(1px); }
-.ring-back { transform: rotateY(180deg) translateZ(1px); border-color: #728e7d45; }
+.ring-back { display: none; }
 .ring-front > img, .ring-back > img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .ring-back > img { opacity: .65; }
 .ring-front figcaption { position: absolute; bottom: 0; left: 0; right: 0; padding: 7px; background: #0b1513e8; color: #dce8df; font-size: 12px; }
