@@ -14,7 +14,7 @@ const scanIcon = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" st
 document.querySelector('#app').innerHTML = `
   <a class="skip-link" href="#main">К содержанию</a>
   <div class="ambient" aria-hidden="true"></div>
-  <div class="cursor-glow" aria-hidden="true"></div>
+  <div class="cursor-glow-clip" aria-hidden="true"><div class="cursor-glow"></div></div>
   <header class="header wrap">
     <a class="brand" href="#" aria-label="NeuroScan, на главную">${logo}<span>NeuroScan</span></a>
     <nav class="navigation" aria-label="Основная навигация">
@@ -37,9 +37,9 @@ document.querySelector('#app').innerHTML = `
       </div>
     </section>
 
-    <section id="technology" class="section reveal" aria-labelledby="technology-title">
-      <div class="process-band"><div class="wrap"><h2 id="technology-title">От снимка <span>к заключению.</span></h2></div></div>
-      <div class="wrap"><div class="process">${processCards()}</div></div>
+    <section id="technology" class="section wrap reveal" aria-labelledby="technology-title">
+      <div class="topic-heading"><h2 id="technology-title">От снимка <span>к заключению.</span></h2></div>
+      <div class="process">${processCards()}</div>
     </section>
 
     ${showcaseMarkup()}
@@ -47,11 +47,11 @@ document.querySelector('#app').innerHTML = `
     ${impactMarkup()}
 
     <section id="security" class="section wrap reveal" aria-labelledby="security-title">
-      <div class="security-layout"><div class="security-heading"><div><p class="eyebrow">Доверие. Точность. Безопасность.</p><h2 id="security-title">Второе мнение.<br><span>Не замена врачу.</span></h2></div><div class="security-caption"><p class="security-flow-title">Как защищаются данные пациента</p><div class="security-flow" role="group" aria-label="Снимок обезличивается перед отправкой на сервер в РФ"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H5v20h14V7Zm0 0v5h5M8 12h8M8 16h6"/></svg>Снимок</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 12h17m-6-6 6 6-6 6"/></svg><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="7" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3M17 7l5 5m0-5-5 5"/></svg>Обезличивание</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 12h17m-6-6 6 6-6 6"/></svg><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="7" rx="2"/><rect x="3" y="14" width="18" height="7" rx="2"/><path d="M7 6v1m0 10v1M11 6h6m-6 11h6"/></svg>Сервер в РФ</span></div><p class="security-flow-note">Имена и контакты удаляются до передачи снимка.</p><p class="security-targets">Целевые показатели модели</p><dl class="security-quality"><div><dt>Чувствительность</dt><dd>94,8%</dd></div><div><dt>Специфичность</dt><dd>92,1%</dd></div></dl></div></div>
+      <div class="security-layout"><div class="security-heading"><p class="eyebrow">Доверие. Точность. Безопасность.</p><h2 id="security-title">Второе мнение. <span>Не замена врачу.</span></h2></div>
       <div class="security-list">
-        <article tabindex="0"><div class="security-art" aria-hidden="true"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M32 7 51 15v14c0 13-9 22-19 28C22 51 13 42 13 29V15Z"/><rect x="24" y="28" width="16" height="14" rx="3"/><path d="M28 28v-5a4 4 0 0 1 8 0v5"/><circle class="security-pulse" cx="32" cy="35" r="2"/></svg></div><div><h3>Серверы в РФ</h3><p>Обезличивание снимков, доступ по ролям и защищённый канал. Требования к обработке данных: ФЗ-152.</p></div></article>
-        <article tabindex="0"><div class="security-art" aria-hidden="true"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="15" y="9" width="34" height="46" rx="5"/><path d="M23 19h18M23 26h12M23 34h7"/><path class="security-draw" d="m26 43 5 5 12-13"/></svg></div><div><h3>Разметка врачами</h3><p>Обучающую выборку размечают практикующие врачи-рентгенологи. Качество разметки проверяют специалисты.</p></div></article>
-        <article tabindex="0"><div class="security-art" aria-hidden="true"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="26" cy="19" r="9"/><path d="M10 53v-7a16 16 0 0 1 30-7"/><path class="security-draw" d="m38 45 6 6 12-15"/></svg></div><div><h3>Контроль специалиста</h3><p>ИИ формирует предварительное описание. Врач проверяет, редактирует и подписывает заключение.</p></div></article>
+        <article tabindex="0"><div class="security-card-heading"><div class="security-art" aria-hidden="true"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M32 7 51 15v14c0 13-9 22-19 28C22 51 13 42 13 29V15Z"/><rect x="24" y="28" width="16" height="14" rx="3"/><path d="M28 28v-5a4 4 0 0 1 8 0v5"/></svg></div><h3>Серверы в РФ</h3></div><div class="security-flow" role="group" aria-label="Снимок обезличивается перед отправкой на сервер в РФ"><span>Снимок</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 12h17m-6-6 6 6-6 6"/></svg><span>Обезличивание</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 12h17m-6-6 6 6-6 6"/></svg><span>Сервер в РФ</span></div><p>Данные пациента удаляются до передачи снимка. Доступ по ролям и защищённый канал. Требования к обработке: ФЗ-152.</p></article>
+        <article tabindex="0"><div class="security-card-heading"><div class="security-art" aria-hidden="true"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="15" y="9" width="34" height="46" rx="5"/><path d="M23 19h18M23 26h12M23 34h7"/><path class="security-draw" d="m26 43 5 5 12-13"/></svg></div><h3>Разметка врачами</h3></div><p>Обучающую выборку размечают практикующие врачи-рентгенологи. Качество разметки проверяют специалисты.</p><div class="security-parameters"><p class="security-targets">Целевые показатели модели</p><dl class="security-quality"><div><dt>Чувствительность</dt><dd>94,8%</dd></div><div><dt>Специфичность</dt><dd>92,1%</dd></div></dl></div></article>
+        <article tabindex="0"><div class="security-card-heading"><div class="security-art" aria-hidden="true"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="26" cy="19" r="9"/><path d="M10 53v-7a16 16 0 0 1 30-7"/><path class="security-draw" d="m38 45 6 6 12-15"/></svg></div><h3>Контроль специалиста</h3></div><p>ИИ формирует предварительное описание. Врач проверяет, редактирует и подписывает заключение.</p><div class="security-human-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>Финальное решение за врачом</div></article>
       </div></div>
     </section>
 

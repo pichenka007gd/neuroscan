@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mountSpotlight } from '../src/spotlight.js';
 
-test('cursor glow coalesces pointer events, stays behind content and stops on leave or preference change', t => {
+test('cursor glow follows smoothly, coalesces movement, stops after settling and cancels on leave', t => {
   const keys = ['window', 'document', 'requestAnimationFrame', 'cancelAnimationFrame'];
   const previous = keys.map(key => Object.getOwnPropertyDescriptor(globalThis, key));
   t.after(() => keys.forEach((key, index) => {
@@ -11,29 +11,40 @@ test('cursor glow coalesces pointer events, stays behind content and stops on le
   }));
   const events = {};
   let changed;
-  let callback;
-  let scheduled = 0;
-  let cancelled = 0;
+  let id = 0;
+  const pending = new Map();
   const media = { matches: true, addEventListener(_, fn) { changed = fn; } };
   globalThis.window = { matchMedia: () => media, addEventListener() {} };
   globalThis.document = { addEventListener(name, fn) { events[name] = fn; } };
-  globalThis.requestAnimationFrame = fn => { callback = fn; return ++scheduled; };
-  globalThis.cancelAnimationFrame = () => cancelled++;
+  globalThis.requestAnimationFrame = fn => { pending.set(++id, fn); return id; };
+  globalThis.cancelAnimationFrame = key => pending.delete(key);
+  const step = time => {
+    const callbacks = [...pending.values()];
+    pending.clear();
+    callbacks.forEach(callback => callback(time));
+  };
   const glow = { style: {} };
   mountSpotlight(glow);
   events.pointermove({ pointerType: 'touch', clientX: 1, clientY: 2 });
-  assert.equal(scheduled, 0);
+  assert.equal(pending.size, 0);
   events.pointermove({ pointerType: 'mouse', clientX: 200, clientY: 200 });
   events.pointermove({ pointerType: 'mouse', clientX: 400, clientY: 300 });
-  assert.equal(scheduled, 1);
-  callback();
-  assert.equal(glow.style.transform, 'translate3d(240px, 140px, 0)');
+  assert.equal(pending.size, 1);
+  step(16);
+  const first = glow.style.transform.match(/translate3d\(([-\d.]+)px, ([-\d.]+)px/).slice(1).map(Number);
+  assert(first[0] > -120 && first[0] < 80);
+  assert(first[1] > -120 && first[1] < -20);
   assert.equal(glow.style.opacity, '1');
+  for (let time = 32; time < 2000 && pending.size; time += 16) step(time);
+  assert.equal(glow.style.transform, 'translate3d(80px, -20px, 0)');
+  assert.equal(pending.size, 0);
+  events.pointermove({ pointerType: 'mouse', clientX: 800, clientY: 400 });
+  assert.equal(pending.size, 1);
   events.pointerleave();
   assert.equal(glow.style.opacity, '0');
-  assert.equal(cancelled, 1);
+  assert.equal(pending.size, 0);
   media.matches = false;
   changed();
   events.pointermove({ pointerType: 'mouse', clientX: 100, clientY: 100 });
-  assert.equal(scheduled, 1);
+  assert.equal(pending.size, 0);
 });

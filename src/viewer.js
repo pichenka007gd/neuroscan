@@ -56,8 +56,10 @@ const vertexShader = `
     vec2 screen = (clip.xy / clip.w * 0.5 + 0.5) * viewport;
     vec2 delta = screen - pointer;
     float distance = length(delta);
-    float influence = 1.0 - smoothstep(0.0, 64.0, distance);
-    vec2 push = delta / max(distance, 1.0) * influence * influence * pointerStrength * 18.0;
+    float influence = 1.0 - smoothstep(0.0, 48.0, distance);
+    vec2 radial = delta / max(distance, 1.0);
+    vec2 curl = vec2(-radial.y, radial.x) * influence * (1.0 - influence) * 1.2;
+    vec2 push = (radial * influence * influence * 2.4 + curl) * pointerStrength;
     clip.xy += push / viewport * 2.0 * clip.w;
     gl_Position = clip;
   }

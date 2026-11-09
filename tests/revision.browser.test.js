@@ -32,6 +32,12 @@ test('compact UI, interactive graph, corner ROI and bounded native mobile storie
     assert.equal(await page.locator('.cursor-glow').evaluate(e => getComputedStyle(e).opacity), '1');
     assert.equal(await page.locator('.cursor-glow').evaluate(e => getComputedStyle(e).pointerEvents), 'none');
     assert.equal(await page.locator('.cursor-glow').evaluate(e => getComputedStyle(e).zIndex), '-1');
+    assert.equal(await page.locator('.cursor-glow').evaluate(e => getComputedStyle(e).width), '640px');
+    await page.mouse.move(900, 220);
+    await page.waitForTimeout(25);
+    const trailingX = await page.locator('.cursor-glow').evaluate(e => new DOMMatrix(getComputedStyle(e).transform).m41);
+    assert(trailingX > -20 && trailingX < 580);
+    await page.waitForFunction(() => Math.abs(new DOMMatrix(getComputedStyle(document.querySelector('.cursor-glow')).transform).m41 - 580) < .6);
     await page.locator('.impact-figure').scrollIntoViewIfNeeded();
     await page.waitForFunction(() => document.querySelector('#clinics').classList.contains('impact-complete'));
     assert.equal(await page.locator('.impact-readout button, .impact-scenarios').count(), 0);
@@ -87,7 +93,10 @@ test('compact UI, interactive graph, corner ROI and bounded native mobile storie
       await page.setViewportSize({ width, height: 1000 });
       await page.waitForTimeout(200);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), width);
-      assert.equal(await page.locator('.process-band').evaluate(e => Math.round(e.getBoundingClientRect().width)), width);
+      assert.equal(await page.locator('.process-band').count(), 0);
+      const heading = await page.locator('.topic-heading').boundingBox();
+      const stories = await page.locator('.process').boundingBox();
+      assert(stories.y - heading.y - heading.height <= 28);
       for (const tile of await page.locator('.impact-business > div').all()) {
         assert.equal(await tile.evaluate(e => e.firstElementChild.tagName), 'SPAN');
       }
